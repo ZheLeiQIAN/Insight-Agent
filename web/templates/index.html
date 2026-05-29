@@ -11,26 +11,22 @@
 </head>
 <body class="gradient-bg min-h-screen text-gray-800" x-data="app()" x-init="init()">
     <!-- 顶部导航 -->
-    <nav class="glass sticky top-0 z-50 border-b border-gray-200">
+    <nav class="topbar sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                <div class="brand-mark">
                     <span class="text-white font-bold text-lg">I</span>
                 </div>
                 <div>
-                    <h1 class="font-bold text-gray-900">Insight Agent</h1>
-                    <p class="text-xs text-gray-500">AI 数据分析智能体</p>
+                    <h1 class="font-bold text-white">Insight Agent</h1>
+                    <p class="text-xs text-slate-400">AI 数据分析工作台</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <button @click="currentView='home'" :class="currentView==='home' ? 'bg-cyan-100 text-cyan-700' : 'text-gray-600 hover:bg-gray-100'" 
-                        class="px-4 py-2 rounded-lg transition">🏠 首页</button>
-                <button @click="currentView='crawl'" :class="currentView==='crawl' ? 'bg-cyan-100 text-cyan-700' : 'text-gray-600 hover:bg-gray-100'" 
-                        class="px-4 py-2 rounded-lg transition">🕷️ 爬虫</button>
-                <button @click="currentView='analysis'" :class="currentView==='analysis' ? 'bg-cyan-100 text-cyan-700' : 'text-gray-600 hover:bg-gray-100'" 
-                        class="px-4 py-2 rounded-lg transition">📊 分析</button>
-                <button @click="currentView='chat'" :class="currentView==='chat' ? 'bg-cyan-100 text-cyan-700' : 'text-gray-600 hover:bg-gray-100'" 
-                        class="px-4 py-2 rounded-lg transition">💬 AI 对话</button>
+            <div class="nav-tabs">
+                <button @click="currentView='home'" :class="currentView==='home' ? 'active' : ''">首页</button>
+                <button @click="currentView='crawl'" :class="currentView==='crawl' ? 'active' : ''">数据采集</button>
+                <button @click="currentView='analysis'" :class="currentView==='analysis' ? 'active' : ''">分析报告</button>
+                <button @click="currentView='chat'" :class="currentView==='chat' ? 'active' : ''">AI 对话</button>
             </div>
         </div>
     </nav>
@@ -39,41 +35,62 @@
     <main class="max-w-7xl mx-auto px-4 py-8">
         <!-- 首页 -->
         <div x-show="currentView==='home'" x-cloak>
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold text-white mb-4">Insight Agent</h2>
-                <p class="text-xl text-cyan-200">智能数据分析爬虫智能体</p>
-                <p class="text-gray-400 mt-2">Crawl · Analyze · Visualize · Chat — Powered by DeepSeek</p>
+            <div class="home-hero mb-8">
+                <div>
+                    <p class="hero-kicker">本地 AI 数据分析工作台</p>
+                    <h2 class="text-4xl font-bold text-white mb-4">Insight Agent</h2>
+                    <p class="text-lg text-slate-200 max-w-2xl">上传数据或采集公开信息，系统会帮你完成清洗、分析、报告和 AI 追问。适合市场调研、品牌舆情、评论分析和课题研究。</p>
+                </div>
+                <div class="hero-actions">
+                    <button @click="currentView='crawl'" class="primary-action">开始采集数据</button>
+                    <button @click="currentView='analysis'" class="secondary-action">上传/分析文件</button>
+                </div>
+            </div>
+
+            <div x-show="systemStatus && !systemStatus.api_key_configured" class="notice-card mb-6">
+                <div class="font-semibold text-amber-900">AI 功能尚未配置</div>
+                <p class="text-sm text-amber-800 mt-1">你仍然可以先使用上传文件、基础统计、词频和部分本地分析。AI 对话、主题提取和观点挖掘需要在启动器中配置 DeepSeek API Key。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>准备数据</h3>
+                    <p>选择一个平台采集，或直接上传 CSV、Excel、JSON 文件。</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>选择分析</h3>
+                    <p>使用快速扫描、品牌舆情、趋势追踪等模板自动生成结果。</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>查看报告</h3>
+                    <p>生成 HTML 报告后，可以继续让 AI 数据分析师追问细节。</p>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='crawl'">
-                    <div class="w-14 h-14 rounded-lg bg-cyan-100 flex items-center justify-center mb-4">
-                        <span class="text-3xl">🕷️</span>
-                    </div>
+                    <div class="feature-icon cyan-icon">C</div>
                     <h3 class="font-bold text-lg mb-2">数据采集</h3>
                     <p class="text-gray-600 text-sm">8大平台爬虫，一句话启动</p>
                 </div>
 
                 <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='analysis'">
-                    <div class="w-14 h-14 rounded-lg bg-green-100 flex items-center justify-center mb-4">
-                        <span class="text-3xl">📊</span>
-                    </div>
+                    <div class="feature-icon green-icon">A</div>
                     <h3 class="font-bold text-lg mb-2">智能分析</h3>
                     <p class="text-gray-600 text-sm">7种分析模型，并行执行</p>
                 </div>
 
                 <div class="card glass rounded-xl p-6 cursor-pointer" @click="showReport()">
-                    <div class="w-14 h-14 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
-                        <span class="text-3xl">📄</span>
-                    </div>
+                    <div class="feature-icon violet-icon">R</div>
                     <h3 class="font-bold text-lg mb-2">可视化报告</h3>
                     <p class="text-gray-600 text-sm">HTML/PDF，一键导出</p>
                 </div>
 
                 <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='chat'">
-                    <div class="w-14 h-14 rounded-lg bg-orange-100 flex items-center justify-center mb-4">
-                        <span class="text-3xl">💬</span>
-                    </div>
+                    <div class="feature-icon amber-icon">AI</div>
                     <h3 class="font-bold text-lg mb-2">AI 问答</h3>
                     <p class="text-gray-600 text-sm">持续对话，深度挖掘</p>
                 </div>
@@ -81,13 +98,31 @@
 
             <!-- 最近会话 -->
             <div class="mt-12 glass rounded-xl p-6">
-                <h3 class="font-bold text-lg mb-4">📋 最近会话</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-lg">📋 工作区状态</h3>
+                    <button @click="refreshAll()" class="text-cyan-700 text-sm hover:underline">刷新</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" x-show="systemStatus">
+                    <div class="status-tile">
+                        <div class="status-value" x-text="systemStatus?.data_file_count ?? 0"></div>
+                        <div class="status-label">数据文件</div>
+                    </div>
+                    <div class="status-tile">
+                        <div class="status-value" x-text="systemStatus?.report_count ?? 0"></div>
+                        <div class="status-label">分析报告</div>
+                    </div>
+                    <div class="status-tile">
+                        <div class="status-value" x-text="systemStatus?.api_key_configured ? '已配置' : '未配置'"></div>
+                        <div class="status-label">AI Key</div>
+                    </div>
+                </div>
+                <h3 class="font-bold text-lg mb-4">最近会话</h3>
                 <div x-show="sessions.length > 0">
                     <template x-for="s in sessions" :key="s.id">
                         <div class="flex items-center justify-between py-3 border-b last:border-0">
                             <div>
                                 <span class="font-medium" x-text="s.file"></span>
-                                <span class="text-sm text-gray-500 ml-2" x-text="s.messages + '条消息'"></span>
+                                <span class="text-sm text-gray-500 ml-2" x-text="s.message_count + '轮对话'"></span>
                             </div>
                             <button @click="resumeSession(s.id)" class="text-cyan-600 hover:text-cyan-700 text-sm">继续 →</button>
                         </div>
@@ -99,17 +134,23 @@
 
         <!-- 爬虫页面 -->
         <div x-show="currentView==='crawl'" x-cloak>
+            <div class="page-head">
+                <div>
+                    <p class="section-kicker">Collect</p>
+                    <h2>数据采集</h2>
+                    <p>选择平台、填写参数，然后在后台运行采集任务。任务过程中可以随时中止。</p>
+                </div>
+            </div>
+
             <div class="glass rounded-xl p-6 mb-6">
-                <h2 class="text-2xl font-bold mb-6">🕷️ 数据采集</h2>
-                
                 <!-- 自然语言模式 -->
                 <div class="mb-8">
-                    <h3 class="font-semibold mb-4 text-cyan-700">💬 自然语言描述</h3>
+                    <h3 class="font-semibold mb-4 text-cyan-700">自然语言描述</h3>
                     <div class="flex space-x-3">
                         <input type="text" x-model="nlQuery" placeholder="例如：爬知乎上关于人工智能的回答，要100条" 
                                class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
                         <button @click="nlCrawl()" :disabled="loading" 
-                                class="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50">
+                                class="app-button primary disabled:opacity-50">
                             <span x-show="!loading">AI 解析</span>
                             <span x-show="loading" class="thinking">处理中</span>
                         </button>
@@ -117,12 +158,12 @@
                 </div>
 
                 <!-- 手动选择 -->
-                <h3 class="font-semibold mb-4 text-cyan-700">🔧 手动选择平台</h3>
+                    <h3 class="font-semibold mb-4 text-cyan-700">手动选择平台</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <template x-for="c in crawlers" :key="c.key">
                         <div @click="selectCrawler(c)" 
                              :class="selectedCrawler?.key === c.key ? 'ring-2 ring-cyan-500 bg-cyan-50' : 'hover:bg-gray-50'"
-                             class="border rounded-lg p-4 cursor-pointer transition">
+                             class="platform-tile cursor-pointer transition">
                             <div class="font-medium" x-text="c.platform"></div>
                             <div class="text-sm text-gray-500 mt-1" x-text="c.name"></div>
                         </div>
@@ -131,7 +172,7 @@
 
                 <!-- 参数配置 -->
                 <div x-show="selectedCrawler" x-cloak class="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 class="font-medium mb-3">⚙️ 参数配置</h4>
+                    <h4 class="font-medium mb-3">参数配置</h4>
                     <div class="space-y-3">
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">URL / ID</label>
@@ -142,21 +183,42 @@
                             <input type="number" x-model="crawlParams.max" class="w-full px-3 py-2 border rounded-lg" placeholder="100">
                         </div>
                         <button @click="startCrawl()" :disabled="loading" 
-                                class="w-full py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50">
-                            <span x-show="!loading">🚀 开始采集</span>
+                                class="app-button primary w-full disabled:opacity-50">
+                            <span x-show="!loading">开始采集</span>
                             <span x-show="loading" class="thinking">采集中</span>
                         </button>
+                    </div>
+                </div>
+
+                <div x-show="crawlJob" x-cloak class="task-panel mt-6">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="task-title">采集任务</div>
+                            <div class="task-meta">
+                                状态：<span x-text="crawlStatus?.status || 'started'"></span>
+                                <span x-show="crawlStatus?.rows"> · <span x-text="crawlStatus?.rows"></span> 条记录</span>
+                            </div>
+                        </div>
+                        <button x-show="['started','queued','running','cancelling'].includes(crawlStatus?.status || 'started')"
+                                @click="cancelCrawl()"
+                                class="danger-action">
+                            中止任务
+                        </button>
+                    </div>
+                    <div class="task-log" x-show="crawlLogs.length">
+                        <template x-for="(line, i) in crawlLogs.slice(-8)" :key="i">
+                            <div x-text="line"></div>
+                        </template>
                     </div>
                 </div>
             </div>
 
             <!-- 上传文件 -->
             <div class="glass rounded-xl p-6">
-                <h3 class="font-semibold mb-4">📁 上传数据文件</h3>
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <h3 class="font-semibold mb-4">上传数据文件</h3>
+                <div class="upload-zone">
                     <input type="file" id="fileInput" accept=".xlsx,.csv,.json" @change="uploadFile($event)" class="hidden">
                     <label for="fileInput" class="cursor-pointer">
-                        <div class="text-4xl mb-2">📂</div>
                         <p class="text-gray-600">点击或拖拽文件到这里</p>
                         <p class="text-sm text-gray-400 mt-1">支持 .xlsx, .csv, .json</p>
                     </label>
@@ -166,8 +228,15 @@
 
         <!-- 分析页面 -->
         <div x-show="currentView==='analysis'" x-cloak>
+            <div class="page-head">
+                <div>
+                    <p class="section-kicker">Analyze</p>
+                    <h2>分析报告</h2>
+                    <p>选择数据文件和分析模板，生成结构化洞察与可视化报告。</p>
+                </div>
+            </div>
+
             <div class="glass rounded-xl p-6">
-                <h2 class="text-2xl font-bold mb-6">📊 数据分析</h2>
                 
                 <!-- 选择数据文件 -->
                 <div class="mb-6">
@@ -176,8 +245,8 @@
                         <template x-for="f in files" :key="f.path">
                             <div @click="selectedFile = f" 
                                  :class="selectedFile?.path === f.path ? 'ring-2 ring-cyan-500 bg-cyan-50' : 'hover:bg-gray-50'"
-                                 class="border rounded-lg p-3 cursor-pointer flex items-center space-x-3">
-                                <span class="text-2xl">📄</span>
+                                 class="file-tile cursor-pointer flex items-center space-x-3">
+                                <span class="file-dot"></span>
                                 <div>
                                     <div class="font-medium" x-text="f.name"></div>
                                     <div class="text-sm text-gray-500" x-text="f.time"></div>
@@ -193,7 +262,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <template x-for="t in templates" :key="t.id">
                             <div @click="runTemplate(t)" 
-                                 class="border rounded-lg p-4 cursor-pointer hover:bg-cyan-50 transition">
+                                 class="template-tile cursor-pointer hover:bg-cyan-50 transition">
                                 <div class="font-medium" x-text="t.name"></div>
                                 <div class="text-sm text-gray-500 mt-1" x-text="t.desc"></div>
                             </div>
@@ -203,7 +272,7 @@
 
                 <!-- 结果显示 -->
                 <div x-show="analysisResult" x-cloak class="mt-6">
-                    <h3 class="font-semibold mb-3">📈 分析结果</h3>
+                    <h3 class="font-semibold mb-3">分析结果</h3>
                     <div class="bg-gray-50 rounded-lg p-4">
                         <pre class="whitespace-pre-wrap text-sm" x-text="analysisResult"></pre>
                     </div>
@@ -213,21 +282,28 @@
 
         <!-- AI 对话页面 -->
         <div x-show="currentView==='chat'" x-cloak>
-            <div class="glass rounded-xl p-6 h-[calc(100vh-200px)] flex flex-col">
-                <h2 class="text-2xl font-bold mb-4">💬 AI 数据分析师</h2>
+            <div class="page-head">
+                <div>
+                    <p class="section-kicker">Ask</p>
+                    <h2>AI 数据分析师</h2>
+                    <p>基于已上传或已采集的数据进行追问。需要配置 DeepSeek API Key。</p>
+                </div>
+            </div>
+
+            <div class="glass rounded-xl p-6 h-[calc(100vh-260px)] flex flex-col">
                 
                 <!-- 会话列表 -->
                 <div x-show="!currentSession" class="flex-1">
                     <div class="mb-4">
-                        <button @click="createSession()" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
-                            ➕ 新建会话
+                        <button @click="createSession()" class="app-button primary">
+                            新建会话
                         </button>
                     </div>
                     <div class="space-y-2">
                         <template x-for="s in sessions" :key="s.id">
-                            <div @click="resumeSession(s.id)" class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                            <div @click="resumeSession(s.id)" class="file-tile cursor-pointer hover:bg-gray-50">
                                 <span x-text="s.file"></span>
-                                <span class="text-sm text-gray-500 ml-2" x-text="s.messages + '条消息'"></span>
+                                <span class="text-sm text-gray-500 ml-2" x-text="s.message_count + '轮对话'"></span>
                             </div>
                         </template>
                     </div>
@@ -251,7 +327,7 @@
                         <input type="text" x-model="chatInput" @keyup.enter="sendMessage()" 
                                placeholder="输入分析需求..." class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500">
                         <button @click="sendMessage()" :disabled="chatLoading" 
-                                class="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 disabled:opacity-50">
+                                class="app-button primary disabled:opacity-50">
                             发送
                         </button>
                     </div>

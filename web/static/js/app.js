@@ -5,12 +5,17 @@ function app() {
         // 状态
         currentView: 'home',
         loading: false,
+        systemStatus: null,
         
         // 爬虫相关
         crawlers: [],
         selectedCrawler: null,
         nlQuery: '',
         crawlParams: { url: '', max: 100 },
+        crawlJob: null,
+        crawlStatus: null,
+        crawlLogs: [],
+        crawlPolling: null,
         
         // 分析相关
         files: [],
@@ -27,10 +32,26 @@ function app() {
         
         // 初始化
         async init() {
+            await this.loadSystemStatus();
             await this.loadCrawlers();
             await this.loadFiles();
             await this.loadTemplates();
             await this.loadSessions();
+        },
+
+        async refreshAll() {
+            await this.loadSystemStatus();
+            await this.loadFiles();
+            await this.loadSessions();
+        },
+
+        async loadSystemStatus() {
+            try {
+                const resp = await fetch('/api/system/status');
+                this.systemStatus = await resp.json();
+            } catch (e) {
+                console.error('加载系统状态失败:', e);
+            }
         },
         
         // ======== 爬虫 ========
@@ -63,14 +84,15 @@ function app() {
                 if (data.error) {
                     alert('❌ ' + data.error);
                 } else {
-                    alert(`✅ 采集完成！\n平台: ${data.platform}\n文件: ${data.file}\n记录: ${data.rows}条`);
-                    await this.loadFiles();
-                    this.currentView = 'analysis';
+                    this.crawlJob = data.job_id;
+                    this.crawlStatus = { status: 'started', platform: data.platform, reason: data.reason };
+                    this.crawlLogs = [`AI 已选择平台：${data.platform}`, data.reason ? `原因：${data.reason}` : ''];
+                    this.pollCrawlJob(data.job_id);
                 }
             } catch (e) {
                 alert('❌ 请求失败: ' + e.message);
-            } finally {
                 this.loading = false;
+            } finally {
             }
         },
         
@@ -78,6 +100,9 @@ function app() {
             if (!this.selectedCrawler) return;
             
             this.loading = true;
+            this.crawlJob = null;
+            this.crawlStatus = null;
+            this.crawlLogs = [];
             try {
                 const resp = await fetch('/api/crawl', {
                     method: 'POST',
@@ -92,14 +117,68 @@ function app() {
                 if (data.error) {
                     alert('❌ ' + data.error);
                 } else {
-                    alert(`✅ 采集完成！\n文件: ${data.file}\n记录: ${data.rows}条`);
-                    await this.loadFiles();
-                    this.currentView = 'analysis';
+                    this.crawlJob = data.job_id;
+                    this.crawlStatus = { status: 'started' };
+                    this.pollCrawlJob(data.job_id);
                 }
             } catch (e) {
                 alert('❌ 请求失败: ' + e.message);
-            } finally {
                 this.loading = false;
+            }
+        },
+
+        async pollCrawlJob(jobId) {
+            if (this.crawlPolling) {
+                clearInterval(this.crawlPolling);
+            }
+
+            const poll = async () => {
+                try {
+                    const resp = await fetch(`/api/crawl/status/${jobId}`);
+                    const data = await resp.json();
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    this.crawlStatus = data;
+                    this.crawlLogs = data.logs || [];
+
+                    if (['done', 'failed', 'cancelled'].includes(data.status)) {
+                        clearInterval(this.crawlPolling);
+                        this.crawlPolling = null;
+                        this.loading = false;
+                        await this.loadFiles();
+                        await this.loadSystemStatus();
+
+                        if (data.status === 'done' && data.file) {
+                            alert(`✅ 采集完成！\n文件: ${data.name}\n记录: ${data.rows}条`);
+                            this.currentView = 'analysis';
+                        } else if (data.status === 'cancelled') {
+                            alert('已中止采集任务');
+                        } else if (data.status === 'failed') {
+                            alert('❌ 采集失败: ' + (data.error || '未知错误'));
+                        }
+                    }
+                } catch (e) {
+                    clearInterval(this.crawlPolling);
+                    this.crawlPolling = null;
+                    this.loading = false;
+                    alert('❌ 获取采集状态失败: ' + e.message);
+                }
+            };
+
+            await poll();
+            this.crawlPolling = setInterval(poll, 1500);
+        },
+
+        async cancelCrawl() {
+            if (!this.crawlJob) return;
+            try {
+                await fetch(`/api/crawl/cancel/${this.crawlJob}`, { method: 'POST' });
+                this.crawlStatus = { ...(this.crawlStatus || {}), status: 'cancelling' };
+                this.crawlLogs = [...this.crawlLogs, '正在中止任务...'];
+            } catch (e) {
+                alert('❌ 中止失败: ' + e.message);
+            } finally {
             }
         },
         
@@ -122,6 +201,8 @@ function app() {
                 } else {
                     alert(`✅ 上传成功！\n文件: ${data.name}\n大小: ${(data.size / 1024).toFixed(1)}KB`);
                     await this.loadFiles();
+                    await this.loadSystemStatus();
+                    this.currentView = 'analysis';
                 }
             } catch (e) {
                 alert('❌ 上传失败: ' + e.message);
@@ -174,6 +255,7 @@ function app() {
                 } else {
                     this.analysisResult = `✅ 分析完成！\n\n模板: ${template.name}\n报告: ${data.report}\n执行模型: ${data.models_ran}个`;
                     alert(this.analysisResult);
+                    await this.loadSystemStatus();
                 }
             } catch (e) {
                 alert('❌ 分析失败: ' + e.message);
@@ -231,7 +313,7 @@ function app() {
                 
                 if (session) {
                     // 加载历史消息
-                    this.chatMessages = session.messages || [];
+                    this.chatMessages = Array.isArray(session.messages) ? session.messages : [];
                 }
             } catch (e) {
                 console.error('恢复会话失败:', e);

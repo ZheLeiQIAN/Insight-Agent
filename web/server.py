@@ -4,6 +4,10 @@ import sys
 import json
 import threading
 import logging
+import os
+import subprocess
+import time
+import uuid
 from pathlib import Path
 from datetime import datetime
 
@@ -23,14 +27,49 @@ app = Flask(__name__,
             static_folder=str(Path(__file__).parent / 'static'))
 
 _sessions = {}
+_crawl_jobs = {}
 _upload_folder = PROJECT_ROOT / 'output' / 'data'
 _upload_folder.mkdir(parents=True, exist_ok=True)
+
+
+def _is_valid_api_key(value: str) -> bool:
+    return bool(value and not value.startswith('sk-your-key') and value != 'here')
+
+
+def _get_api_key() -> str:
+    api_key = os.environ.get('DEEPSEEK_API_KEY', '')
+    env_file = PROJECT_ROOT / '.env'
+    if not api_key and env_file.exists():
+        for line in env_file.read_text(encoding='utf-8').splitlines():
+            if line.strip().startswith('DEEPSEEK_API_KEY='):
+                api_key = line.split('=', 1)[1].strip()
+                break
+    return api_key
 
 
 # ==================== 页面 ====================
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/api/system/status')
+def system_status():
+    """给普通用户看的系统状态。"""
+    data_files = []
+    for ext in ['*.xlsx', '*.csv', '*.json']:
+        data_files.extend(_upload_folder.rglob(ext))
+
+    report_dir = PROJECT_ROOT / 'output' / 'reports'
+    report_files = list(report_dir.glob('*.html')) if report_dir.exists() else []
+
+    return jsonify({
+        'api_key_configured': _is_valid_api_key(_get_api_key()),
+        'data_file_count': len(data_files),
+        'report_count': len(report_files),
+        'data_dir': str(_upload_folder),
+        'report_dir': str(report_dir),
+    })
 
 
 # ==================== 爬虫 ====================
@@ -50,7 +89,145 @@ def start_crawl():
     if key not in CRAWLER_SCRIPTS:
         return jsonify({'error': f'未知爬虫: {key}'}), 400
 
-    info = CRAWLER_SCRIPTS[key]
+    job_id = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + uuid.uuid4().hex[:6]
+    _crawl_jobs[job_id] = {
+        'id': job_id,
+        'crawler': key,
+        'platform': CRAWLER_SCRIPTS[key]['platform'],
+        'status': 'queued',
+        'logs': [],
+        'file': None,
+        'name': None,
+        'rows': 0,
+        'error': '',
+        'cancel_requested': False,
+    }
+
+    thread = threading.Thread(target=_run_crawl_job, args=(job_id, key, params), daemon=True)
+    _crawl_jobs[job_id]['thread'] = thread
+    thread.start()
+
+    return jsonify({'status': 'started', 'job_id': job_id})
+
+
+def _append_job_log(job_id, line):
+    job = _crawl_jobs.get(job_id)
+    if not job:
+        return
+    logs = job.setdefault('logs', [])
+    logs.append(line)
+    if len(logs) > 200:
+        del logs[:len(logs) - 200]
+
+
+def _run_crawl_job(job_id, key, params):
+    job = _crawl_jobs[job_id]
+    try:
+        from crawlers.runner import build_command, get_latest_output_files, _collect_output_files, _strip_ansi
+        from main import load_data
+        from config import CRAWLERS_DIR
+
+        cmd, output_dir = build_command(key, params)
+        script_dir = CRAWLERS_DIR / key
+        job.update({
+            'status': 'running',
+            'output_dir': str(output_dir),
+            'command': ' '.join(cmd),
+            'started_at': datetime.now().isoformat(),
+        })
+        _append_job_log(job_id, f"开始采集：{job['platform']}")
+
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(script_dir),
+            env=os.environ.copy(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+        job['process'] = proc
+
+        def read_stream(stream, is_error=False):
+            for raw in stream:
+                line = _strip_ansi(raw.rstrip('\n'))
+                if line.strip():
+                    _append_job_log(job_id, ("错误: " if is_error else "") + line)
+
+        threading.Thread(target=read_stream, args=(proc.stdout, False), daemon=True).start()
+        threading.Thread(target=read_stream, args=(proc.stderr, True), daemon=True).start()
+
+        while proc.poll() is None:
+            if job.get('cancel_requested'):
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                job['status'] = 'cancelled'
+                job['finished_at'] = datetime.now().isoformat()
+                _append_job_log(job_id, "任务已中止")
+                return
+            time.sleep(0.5)
+
+        _collect_output_files(script_dir, output_dir)
+        files = get_latest_output_files(output_dir)
+        if files:
+            raw = load_data(files[0])
+            job.update({
+                'status': 'done',
+                'file': str(files[0]),
+                'name': files[0].name,
+                'rows': len(raw) if raw else 0,
+                'finished_at': datetime.now().isoformat(),
+            })
+            _append_job_log(job_id, f"采集完成：{files[0].name}")
+        elif proc.returncode == 0:
+            job.update({'status': 'done', 'finished_at': datetime.now().isoformat()})
+            _append_job_log(job_id, "采集完成，但没有找到输出文件")
+        else:
+            job.update({
+                'status': 'failed',
+                'error': f'爬虫退出码：{proc.returncode}',
+                'finished_at': datetime.now().isoformat(),
+            })
+            _append_job_log(job_id, job['error'])
+    except Exception as e:
+        logger.error(f"爬虫任务失败: {e}", exc_info=True)
+        job.update({'status': 'failed', 'error': str(e), 'finished_at': datetime.now().isoformat()})
+
+
+@app.route('/api/crawl/status/<job_id>')
+def crawl_status(job_id):
+    job = _crawl_jobs.get(job_id)
+    if not job:
+        return jsonify({'error': '任务不存在'}), 404
+    payload = {k: v for k, v in job.items() if k not in ('thread', 'process')}
+    return jsonify(payload)
+
+
+@app.route('/api/crawl/cancel/<job_id>', methods=['POST'])
+def cancel_crawl(job_id):
+    job = _crawl_jobs.get(job_id)
+    if not job:
+        return jsonify({'error': '任务不存在'}), 404
+    if job.get('status') in ('done', 'failed', 'cancelled'):
+        return jsonify({'status': job.get('status')})
+    job['cancel_requested'] = True
+    return jsonify({'status': 'cancelling'})
+
+
+@app.route('/api/crawl-sync', methods=['POST'])
+def start_crawl_sync():
+    """保留同步采集接口，供旧调用方兼容。"""
+    data = request.json
+    key = data.get('crawler')
+    params = data.get('params', {})
+
+    from config import CRAWLER_SCRIPTS
+    if key not in CRAWLER_SCRIPTS:
+        return jsonify({'error': f'未知爬虫: {key}'}), 400
+
     try:
         from crawlers.runner import run_crawler, get_latest_output_files
         from main import load_data
@@ -71,14 +248,21 @@ def nl_crawl():
     if not desc:
         return jsonify({'error': '请描述需求'}), 400
 
-    from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, CRAWLER_SCRIPTS
+    from config import LLM_BASE_URL, LLM_MODEL, CRAWLER_SCRIPTS
+    if not _is_valid_api_key(_get_api_key()):
+        return jsonify({'error': 'DeepSeek API Key 未配置或仍是示例占位值，请在 .env 中填写真实 Key 后再使用自然语言采集。'}), 400
+
     from openai import OpenAI
-    client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+    client = OpenAI(api_key=_get_api_key(), base_url=LLM_BASE_URL)
 
     platforms_desc = '\n'.join(f'- {k}: {v["platform"]} — {v["description"]}' for k, v in CRAWLER_SCRIPTS.items())
-    r = client.chat.completions.create(model=LLM_MODEL, max_tokens=300, temperature=0.1,
-        messages=[{'role': 'system', 'content': f'选爬虫。JSON:{{"platform_key":"...","params":{{"url":"...","max":50}},"reason":"..."}}\n{platforms_desc}'},
-                  {'role': 'user', 'content': desc}])
+    try:
+        r = client.chat.completions.create(model=LLM_MODEL, max_tokens=300, temperature=0.1,
+            messages=[{'role': 'system', 'content': f'选爬虫。JSON:{{"platform_key":"...","params":{{"url":"...","max":50}},"reason":"..."}}\n{platforms_desc}'},
+                      {'role': 'user', 'content': desc}])
+    except Exception as e:
+        logger.warning(f"自然语言采集 AI 解析失败: {e}")
+        return jsonify({'error': f'AI 解析失败，请检查 API Key 或先使用手动选择平台。详情: {e}'}), 400
     raw_resp = r.choices[0].message.content.strip().split('```')[0].strip()
     parsed = json.loads(raw_resp)
 
@@ -89,15 +273,29 @@ def nl_crawl():
     params = parsed.get('params', {})
     reason = parsed.get('reason', '')
 
-    from crawlers.runner import run_crawler, get_latest_output_files
-    from main import load_data
-    output_dir = run_crawler(platform, params)
-    files = get_latest_output_files(output_dir)
-    if files:
-        raw = load_data(files[0])
-        return jsonify({'status': 'ok', 'platform': CRAWLER_SCRIPTS[platform]['platform'],
-                        'reason': reason, 'file': str(files[0]), 'rows': len(raw) if raw else 0})
-    return jsonify({'status': 'ok', 'warning': '采集完成但无数据'})
+    job_id = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + uuid.uuid4().hex[:6]
+    _crawl_jobs[job_id] = {
+        'id': job_id,
+        'crawler': platform,
+        'platform': CRAWLER_SCRIPTS[platform]['platform'],
+        'reason': reason,
+        'status': 'queued',
+        'logs': [],
+        'file': None,
+        'name': None,
+        'rows': 0,
+        'error': '',
+        'cancel_requested': False,
+    }
+    thread = threading.Thread(target=_run_crawl_job, args=(job_id, platform, params), daemon=True)
+    _crawl_jobs[job_id]['thread'] = thread
+    thread.start()
+    return jsonify({
+        'status': 'started',
+        'job_id': job_id,
+        'platform': CRAWLER_SCRIPTS[platform]['platform'],
+        'reason': reason,
+    })
 
 
 # ==================== 模板 ====================
@@ -193,7 +391,8 @@ def list_sessions():
         result.append({
             'id': sid,
             'file': s.data_file.name if hasattr(s, 'data_file') else '?',
-            'messages': len(s.history) // 2 if hasattr(s, 'history') else 0,
+            'message_count': len(s.history) // 2 if hasattr(s, 'history') else 0,
+            'messages': s.history if hasattr(s, 'history') else [],
         })
     return jsonify(result)
 
@@ -202,6 +401,9 @@ def list_sessions():
 def create_session():
     data = request.json or {}
     file_path = data.get('file')
+
+    if not _is_valid_api_key(_get_api_key()):
+        return jsonify({'error': 'AI 对话需要先配置 DeepSeek API Key。你仍然可以先在“分析报告”页面使用基础分析模板。'}), 400
 
     if file_path:
         fp = Path(file_path)

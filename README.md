@@ -136,6 +136,17 @@ Insight Agent 是一个**完全独立可分发的 AI 数据分析智能体**，�
 
 ## 四、快速开始
 
+### 普通用户：双击启动
+
+如果你不熟悉命令行，优先使用一键启动入口：
+
+- macOS：双击 `Insight Agent.app`，或备用双击 `启动 Insight Agent.command`
+- Windows：双击 `启动 Insight Agent.bat`
+
+图形化启动器会自动检查依赖、创建配置文件、让你选择是否配置 DeepSeek API Key，并打开本地 Web 工作台。
+
+更详细说明见：`普通用户使用指南.md`
+
 ### 环境要求
 
 - Python 3.10+

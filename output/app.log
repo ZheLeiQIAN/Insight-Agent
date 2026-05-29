@@ -1,0 +1,186 @@
+2026-05-29 14:03:52 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:9527
+2026-05-29 14:03:52 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-29 14:03:52 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:03:52] "GET / HTTP/1.1" 200 -
+2026-05-29 14:03:52 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:03:52] "GET /static/css/style.css HTTP/1.1" 200 -
+2026-05-29 14:03:52 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:03:52] "GET /static/js/app.js HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: basic_stats (quantitative)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: sentiment_analysis (text_analysis)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: word_frequency (text_analysis)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: time_series (time_series)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: theme_extraction (qualitative)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: content_category (qualitative)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: insight_mining (qualitative)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: comment_clustering (advanced)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: user_activity (advanced)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 注册分析工具: interaction_network (advanced)
+2026-05-29 14:04:02 - analysis.tools_registry - INFO - 已注册 10 个内置分析工具
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 14:04:02 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:02] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 14:04:10 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:04:10] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-29 14:05:25 - web.server - ERROR - Exception on /api/nl-crawl [POST]
+Traceback (most recent call last):
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zhangdongming/Library/CloudStorage/OneDrive-个人/学习/Insight-Agent/web/server.py", line 107, in nl_crawl
+    r = client.chat.completions.create(model=LLM_MODEL, max_tokens=300, temperature=0.1,
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_utils/_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/resources/chat/completions/completions.py", line 1215, in create
+    return self._post(
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_base_client.py", line 1332, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_base_client.py", line 1105, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-05-29 14:05:25 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:05:25] "[35m[1mPOST /api/nl-crawl HTTP/1.1[0m" 500 -
+2026-05-29 14:05:30 - web.server - ERROR - Exception on /api/nl-crawl [POST]
+Traceback (most recent call last):
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zhangdongming/Library/CloudStorage/OneDrive-个人/学习/Insight-Agent/web/server.py", line 107, in nl_crawl
+    r = client.chat.completions.create(model=LLM_MODEL, max_tokens=300, temperature=0.1,
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_utils/_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/resources/chat/completions/completions.py", line 1215, in create
+    return self._post(
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_base_client.py", line 1332, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/Users/zhangdongming/Library/Python/3.9/lib/python/site-packages/openai/_base_client.py", line 1105, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-05-29 14:05:30 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:05:30] "[35m[1mPOST /api/nl-crawl HTTP/1.1[0m" 500 -
+2026-05-29 14:09:44 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:09:44] "POST /api/crawl HTTP/1.1" 200 -
+2026-05-29 14:09:46 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:09:46] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 14:09:46 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:09:46] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 14:09:58 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:09:58] "POST /api/templates/run HTTP/1.1" 200 -
+2026-05-29 14:10:06 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 14:10:06] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: basic_stats (quantitative)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: sentiment_analysis (text_analysis)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: word_frequency (text_analysis)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: time_series (time_series)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: theme_extraction (qualitative)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: content_category (qualitative)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: insight_mining (qualitative)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: comment_clustering (advanced)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: user_activity (advanced)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 注册分析工具: interaction_network (advanced)
+2026-05-29 15:12:16 - analysis.tools_registry - INFO - 已注册 10 个内置分析工具
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: basic_stats (quantitative)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: sentiment_analysis (text_analysis)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: word_frequency (text_analysis)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: time_series (time_series)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: theme_extraction (qualitative)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: content_category (qualitative)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: insight_mining (qualitative)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: comment_clustering (advanced)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: user_activity (advanced)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 注册分析工具: interaction_network (advanced)
+2026-05-29 15:15:18 - analysis.tools_registry - INFO - 已注册 10 个内置分析工具
+2026-05-29 15:17:09 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:9527
+2026-05-29 15:17:09 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-29 15:17:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:09] "GET / HTTP/1.1" 200 -
+2026-05-29 15:17:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:09] "GET /static/js/app.js HTTP/1.1" 200 -
+2026-05-29 15:17:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:09] "GET /static/css/style.css HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 15:17:16 - config - WARNING - 未设置 DEEPSEEK_API_KEY 环境变量，AI 对话和定性分析功能不可用。请在 .env 文件中配置，或运行: export DEEPSEEK_API_KEY=sk-xxx
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: basic_stats (quantitative)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: sentiment_analysis (text_analysis)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: word_frequency (text_analysis)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: time_series (time_series)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: theme_extraction (qualitative)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: content_category (qualitative)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: insight_mining (qualitative)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: comment_clustering (advanced)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: user_activity (advanced)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 注册分析工具: interaction_network (advanced)
+2026-05-29 15:17:16 - analysis.tools_registry - INFO - 已注册 10 个内置分析工具
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 15:17:16 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:16] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 15:17:25 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 15:17:25] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-29 22:01:08 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:9527
+2026-05-29 22:01:08 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-29 22:01:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:09] "GET / HTTP/1.1" 200 -
+2026-05-29 22:01:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:09] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2026-05-29 22:01:09 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:09] "GET /static/css/style.css HTTP/1.1" 200 -
+2026-05-29 22:01:20 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:20] "GET / HTTP/1.1" 200 -
+2026-05-29 22:01:20 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:20] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2026-05-29 22:01:20 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:20] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2026-05-29 22:01:20 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:20] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:01:20 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:20] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-29 22:01:21 - config - WARNING - 未设置 DEEPSEEK_API_KEY 环境变量，AI 对话和定性分析功能不可用。请在 .env 文件中配置，或运行: export DEEPSEEK_API_KEY=sk-xxx
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: basic_stats (quantitative)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: sentiment_analysis (text_analysis)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: word_frequency (text_analysis)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: time_series (time_series)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: theme_extraction (qualitative)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: content_category (qualitative)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: insight_mining (qualitative)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: comment_clustering (advanced)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: user_activity (advanced)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 注册分析工具: interaction_network (advanced)
+2026-05-29 22:01:21 - analysis.tools_registry - INFO - 已注册 10 个内置分析工具
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:01:21 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:01:21] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 22:04:48 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:48] "GET / HTTP/1.1" 200 -
+2026-05-29 22:04:48 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:48] "GET /static/css/style.css HTTP/1.1" 200 -
+2026-05-29 22:04:48 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:48] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:04:54 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:04:54] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 22:10:11 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:11] "GET / HTTP/1.1" 200 -
+2026-05-29 22:10:11 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:11] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2026-05-29 22:10:11 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:11] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/system/status HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/crawlers HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/files HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/sessions HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/templates HTTP/1.1" 200 -
+2026-05-29 22:10:17 - werkzeug - INFO - 127.0.0.1 - - [29/May/2026 22:10:17] "GET /api/sessions HTTP/1.1" 200 -
