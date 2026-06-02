@@ -73,6 +73,14 @@ def build_command(crawler_key: str, args: dict) -> Tuple[list, Path]:
         else:
             cmd.append(mode)
 
+    elif platform == "通用网页":
+        if args.get("url"):
+            cmd.append(args["url"])
+        if args.get("max"):
+            cmd.extend(["--max", str(args["max"])])
+        if args.get("mode"):
+            cmd.extend(["--mode", str(args["mode"])])
+
     # 输出目录重定向到项目 data 目录
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_subdir = DATA_DIR / f"{crawler_key}_{timestamp}"

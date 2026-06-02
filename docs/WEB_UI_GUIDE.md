@@ -347,3 +347,19 @@ python tools/webui_manager.py start
 
 **文档版本**: v1.0  
 **最后更新**: 2024-01-27
+# Scrapling 通用网页采集
+
+项目已接入 Scrapling 作为可选增强，用于采集任意网页的标题、段落和链接。
+
+使用方式：
+
+1. 打开 Web UI 的“数据采集”页面。
+2. 选择“通用网页 / Scrapling 通用网页采集”。
+3. 填入网页 URL。
+4. 点击“开始采集”。
+
+注意：
+
+- Scrapling 当前需要 Python 3.10+。
+- 本项目仍兼容 Python 3.9；在 Python 3.9 环境中，Scrapling 会被跳过，其他爬虫和分析功能不受影响。
+- 如果需要启用 Scrapling，请使用 Python 3.10+ 后运行 `pip install scrapling` 或重新安装 `requirements.txt`。

@@ -93,6 +93,13 @@ CRAWLER_SCRIPTS = {
         "platform": "豆瓣",
         "output_type": "csv",
     },
+    "generic_web": {
+        "name": "Scrapling 通用网页采集",
+        "script": "run.py",
+        "description": "使用 Scrapling 采集任意网页的标题、段落和链接",
+        "platform": "通用网页",
+        "output_type": "csv",
+    },
 }
 
 # === 分析模型注册（由 tools_registry 统一管理，此处仅为兼容旧代码的视图） ===

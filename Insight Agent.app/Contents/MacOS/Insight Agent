@@ -1,0 +1,8 @@
+#!/bin/zsh
+APP_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$APP_DIR"
+if command -v python3 >/dev/null 2>&1; then
+  python3 launcher_gui.py
+else
+  osascript -e 'display dialog "未检测到 Python 3。请先安装 Python 3.9 或更高版本。" buttons {"好"} default button "好"'
+fi
