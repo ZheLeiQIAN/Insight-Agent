@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "insight-agent"
@@ -58,6 +58,12 @@ Documentation = "https://insight-agent.readthedocs.io"
 Repository = "https://github.com/your-org/insight-agent"
 Issues = "https://github.com/your-org/insight-agent/issues"
 
+[tool.setuptools.packages.find]
+include = ["*"]
+
+[tool.setuptools]
+py-modules = ["main"]
+
 [project.scripts]
 insight = "main:main"
 
@@ -85,4 +91,4 @@ addopts = "-v --tb=short"
 [tool.flake8]
 max-line-length = 120
 ignore = ["E501", "W503"]
-exclude = ["agent_core", "__pycache__", ".git"]
+exclude = ["agent_kernel", "__pycache__", ".git"]

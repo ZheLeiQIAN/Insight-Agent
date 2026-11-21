@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1B2A4E" />
+    <title>Insight Agent · 物理世界洞察工作台</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- ============ 统一导航栏 ============ -->
+    <header class="topbar" id="topbar">
+      <div class="topbar-brand">
+        <div class="vol">
+          <strong>VOL.07</strong><br>
+          EDITION 2026.06
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <div class="status">
+          <span><span class="dot live" id="dot-system"></span>系统</span>
+          <span><span class="dot live" id="dot-cam"></span>摄像头</span>
+          <span><span class="dot live" id="dot-model"></span>模型</span>
+        </div>
+        <span id="status-time" style="font-family: var(--mono); font-size: 11px; color: var(--ink-mute);">— : — : —</span>
+        <span class="badge"><span class="dot live"></span>REAL-TIME</span>
+      </div>
+    </header>
+
+    <!-- ============ Hero 品牌区（统一头部） ============ -->
+    <section class="hero">
+      <div class="hero-main">
+        <h2>Insight Agent · <span class="zh">物理世界洞察工作台</span></h2>
+        <p class="lead">
+          实时视频分析 · 客流统计 · 行为识别 · 门店智能
+          <span class="hero-sub">基于 MediaPipe + DeepSeek-V4 的实体门店数字孪生系统。</span>
+        </p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-start-cam-hero">▶ 启动摄像头</button>
+        <button class="btn btn-ghost" data-tab-goto="insight">📊 智能洞察</button>
+      </div>
+    </section>
+
+    <!-- ============ Bento 主体 ============ -->
+    <main class="bento">
+
+      <!-- ===== 左：实时视频墙 ===== -->
+      <section class="video-wall">
+        <div class="card-head">
+          <div class="title">
+            实时视频流
+            <span class="en">LIVE FEED · 30FPS</span>
+          </div>
+          <div class="meta" id="cam-meta">CH-01 · LOCAL · 1280×720</div>
+        </div>
+
+        <div class="video-stage">
+          <video id="cam-video" autoplay playsinline muted></video>
+          <canvas id="overlay" class="overlay"></canvas>
+          <div id="video-placeholder" class="placeholder">
+            <div class="ic">◉</div>
+            <div class="label">实时视频流待启动</div>
+            <div class="sub">AWAITING CAMERA SIGNAL</div>
+          </div>
+          <!-- 角标（科技感） -->
+          <div class="video-corner tl">REC</div>
+          <div class="video-corner tr" id="corner-fps">— FPS</div>
+          <div class="video-corner bl" id="corner-ts">—</div>
+          <div class="video-corner br">CAM-01</div>
+        </div>
+
+        <div class="video-controls">
+          <button id="btn-start-cam" class="btn btn-ghost btn-primary">▶ 启动摄像头</button>
+          <button id="btn-stop-cam" class="btn btn-ghost" disabled>■ 停止</button>
+          <select id="source-select" class="btn-ghost" style="background:transparent;">
+            <option value="0">CH-01 · 本地摄像头 0</option>
+            <option value="1">CH-02 · 本地摄像头 1</option>
+            <option value="rtsp:">RTSP · 网络流</option>
+            <option value="file:">FILE · 录像回放</option>
+          </select>
+          <div class="spacer"></div>
+          <span id="skeleton-stat" style="color:var(--wall-mute);">
+            <span style="color:var(--wall-accent);">●</span> 0 hand · 0 face · 0 person
+          </span>
+        </div>
+      </section>
+
+      <!-- ===== 右：KPI + 行为流 + 热区 ===== -->
+      <section style="display:grid; grid-template-rows: auto 1fr auto; gap:16px; min-width:0;">
+
+        <!-- KPI 条 -->
+        <div class="card">
+          <div class="card-head">
+            <div class="title">
+              实时态势
+              <span class="en">SITUATIONAL KPIs</span>
+            </div>
+            <div class="meta" id="kpi-time">— · —</div>
+          </div>
+          <div class="kpi-strip">
+            <div class="kpi">
+              <div class="lbl">等位桌 / WAITING</div>
+              <div class="num"><span id="kpi-persons">12</span><span class="unit">桌</span><span class="trend up" id="kpi-persons-trend">↑ 3</span></div>
+              <div class="delta">较 1h 前 <span class="bar" style="--w: 68%"></span></div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">客单价 / REVENUE</div>
+              <div class="num"><span id="kpi-dwell">¥3,800</span><span class="unit">/h</span><span class="trend up">↑ ¥420</span></div>
+              <div class="delta">预估 <span class="bar" style="--w: 54%"></span></div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">热门菜品 / HOT</div>
+              <div class="num"><span id="kpi-interest">6</span><span class="unit">项</span></div>
+              <div class="delta">招牌毛肚居首 <span class="bar" style="--w: 78%"></span></div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">事件 / EVENTS</div>
+              <div class="num"><span id="kpi-events">0</span><span class="unit">/h</span></div>
+              <div class="delta">1 异常 <span class="bar" style="--w: 32%; background: var(--red);"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 行为流 -->
+        <div class="card">
+          <div class="card-head">
+            <div class="title">
+              行为与事件
+              <span class="en">BEHAVIORAL STREAM</span>
+            </div>
+            <div class="meta"><span class="dot live"></span>实时</div>
+          </div>
+          <div class="card-body" style="padding-top:8px; padding-bottom:8px;">
+            <ul id="event-list" class="timeline">
+              <li class="timeline-empty">等待事件接入...</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 热区图（门店平面热力） -->
+        <div class="card">
+          <div class="card-head">
+            <div class="title">
+              门店热区
+              <span class="en">STORE FLOOR HEATMAP</span>
+            </div>
+            <div class="meta">实时 · 客流热度</div>
+          </div>
+          <div class="card-body" style="padding:10px 16px 12px;">
+            <div class="heat-wrap" style="height: 280px;">
+              <canvas id="heatmap"></canvas>
+              <div class="legend">
+                <span>冷</span>
+                <span class="scale"></span>
+                <span>热</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 下：智能体工作台（并排双栏） ===== -->
+      <section class="card console full">
+        <div class="console-body" id="console-body">
+          <!-- 左：建议区（固定高度，内容滚动） -->
+          <div class="advice-panel" id="advice-panel">
+            <h4>
+              <span>实时建议 / LIVE ADVISORY</span>
+              <span class="advice-count" id="advice-count">0</span>
+            </h4>
+            <div id="agent-advice"></div>
+          </div>
+          <!-- 右：聊天区（含子Tab切换：对话/洞察/报告） -->
+          <div class="chat-panel">
+            <div class="chat-mode">
+              <span class="mode-tab active" data-mode="chat">💬 对话</span>
+              <span class="mode-tab" data-mode="insight">📊 智能洞察</span>
+              <span class="mode-tab" data-mode="report">📋 阶段报告</span>
+            </div>
+            <!-- 对话模式 -->
+            <div class="chat-mode-body" data-mode-body="chat">
+              <div id="chat-history" class="chat-history"></div>
+              <div class="chat-suggest" id="chat-suggest"></div>
+              <form id="chat-form" class="chat-form">
+                <input id="chat-input" type="text" placeholder="向 Agent 提问，如：当前客流如何？" autocomplete="off" maxlength="200" />
+                <button type="submit" class="btn btn-primary" id="btn-send">发送</button>
+              </form>
+            </div>
+            <!-- 洞察模式 -->
+            <div class="chat-mode-body" data-mode-body="insight" hidden>
+              <div class="insight-grid">
+                <div class="insight-card">
+                  <div class="ic-head"><span>客流趋势 · 10min</span><span class="ic-tag up">+12%</span></div>
+                  <canvas class="ic-spark" id="ic-spark-flow" width="320" height="56"></canvas>
+                  <div class="ic-foot">主通道 6 · 卡座 5 · 等位 3</div>
+                </div>
+                <div class="insight-card">
+                  <div class="ic-head"><span>异常热度 · HOT5</span><span class="ic-tag warn">注意</span></div>
+                  <ul class="ic-list" id="ic-hot"></ul>
+                </div>
+                <div class="insight-card">
+                  <div class="ic-head"><span>菜品关注 · TOP3</span><span class="ic-tag">热销</span></div>
+                  <ul class="ic-list" id="ic-dish"></ul>
+                </div>
+                <div class="insight-card">
+                  <div class="ic-head"><span>服务压力 · 实时</span></div>
+                  <canvas class="ic-spark" id="ic-spark-load" width="320" height="56"></canvas>
+                  <div class="ic-foot">等位 12 桌 · 翻台率 2.1</div>
+                </div>
+              </div>
+            </div>
+            <!-- 报告模式 -->
+            <div class="chat-mode-body" data-mode-body="report" hidden>
+              <div class="report-content" id="report-content">
+                <div class="advice-card">
+                  <div class="head"><span class="pri low">READY</span><span class="intent">点击下方按钮生成报告</span></div>
+                  <div class="text">基于最近事件流，自动生成包含客流、转化、异常、建议 4 段式分析报告。</div>
+                  <div class="actions">
+                    <button class="btn btn-primary" id="btn-report">📋 生成阶段报告</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ 页脚 ============ -->
+    <footer class="colophon">
+      <div class="l">
+        <span>© 2026 · NANKAI UNIV. · INSIGHT AGENT LAB</span>
+      </div>
+      <div class="c">— 看见每一帧的洞察 —</div>
+      <div class="r">
+        <a href="http://127.0.0.1:9530/" target="_blank" data-launch="city-heatmap">城市热区</a>
+        <span>·</span>
+        <a href="http://127.0.0.1:9527/" target="_blank">网络空间信息采集页</a>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

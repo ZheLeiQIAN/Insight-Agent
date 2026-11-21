@@ -20,8 +20,6 @@ class ConfigValidator:
 
     OPTIONAL_CONFIGS = [
         'LLM_MAX_TOKENS',
-        'ANTHROPIC_API_KEY',
-        'ANTHROPIC_BASE_URL',
     ]
 
     @classmethod
@@ -48,16 +46,6 @@ class ConfigValidator:
             # 检查模型名称
             if not LLM_MODEL:
                 errors.append("❌ LLM_MODEL 未配置")
-
-            # 尝试导入 Anthropic 配置（可选）
-            try:
-                from config import ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL
-                if not ANTHROPIC_API_KEY or ANTHROPIC_API_KEY == "your-anthropic-key-here":
-                    errors.append("⚠️  ANTHROPIC_API_KEY 未配置（Claude 功能将不可用）")
-                if not ANTHROPIC_BASE_URL.startswith("http"):
-                    errors.append("❌ ANTHROPIC_BASE_URL 格式不正确")
-            except ImportError:
-                errors.append("⚠️  Anthropic 配置未定义（Claude 功能将不可用）")
 
         except ImportError as e:
             errors.append(f"❌ 配置文件加载失败: {e}")

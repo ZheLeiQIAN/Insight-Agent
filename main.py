@@ -172,42 +172,10 @@ def preview_data(data: list, data_file: Path) -> bool:
 # ================================================================
 # 分析调度
 # ================================================================
-
-def _run_single_quant(data, model, data_file):
-    """单个定量分析任务（线程安全）"""
-    try:
-        from analysis.quantitative import basic_stats, sentiment_analysis, word_frequency, time_series
-        models_map = {
-            "basic_stats": basic_stats,
-            "sentiment": sentiment_analysis,
-            "word_freq": word_frequency,
-            "time_series": time_series,
-        }
-        fn = models_map.get(model)
-        if fn:
-            return {model: fn(data, data_file)}
-        return {model: {"model": model, "error": f"未知模型: {model}"}}
-    except Exception as e:
-        logger.error(f"定量分析失败 [{model}]: {e}")
-        return {model: {"model": model, "error": f"分析失败: {e}"}}
-
-
-def _run_single_qual(data, model, data_file):
-    """单个定性分析任务（线程安全）"""
-    try:
-        from analysis.qualitative import theme_extraction, content_category, insight_mining
-        models_map = {
-            "theme_extraction": theme_extraction,
-            "content_category": content_category,
-            "insight_mining": insight_mining,
-        }
-        fn = models_map.get(model)
-        if fn:
-            return {model: fn(data)}
-        return {model: {"model": model, "error": f"未知模型: {model}"}}
-    except Exception as e:
-        logger.error(f"定性分析失败 [{model}]: {e}")
-        return {model: {"model": model, "error": f"分析失败: {e}"}}
+# 单个分析任务函数已挪到 cli/_dispatch.py，打破 main ↔ cli.commands 循环引用。
+# 这里只保留向后兼容的薄壳。
+from cli._dispatch import run_single_quant as _run_single_quant
+from cli._dispatch import run_single_qual as _run_single_qual
 
 
 # ================================================================
@@ -215,35 +183,181 @@ def _run_single_qual(data, model, data_file):
 # ================================================================
 
 def run_ai_analysis_flow(data: list, data_file: Path):
-    """AI 驱动分析流程：数据预览后 AI 直接主持分析 + 持续对话"""
+    """AI 驱动分析流程：数据预览后 AI 直接主持分析 + 持续对话
+
+    退出 AI 对话（exit / Ctrl+C）后自动生成五段式报告（Markdown + HTML）。
+    """
     console.print()
     console.print(Panel.fit(
         "[bold cyan]🤖 AI 分析师已就绪[/]\n"
         f"数据: [dim]{data_file.name}[/] — {len(data)} 条记录, {len(data[0]) if data else 0} 个字段\n\n"
-        "[dim]AI 正在查看你的数据...[/]",
+        f"[dim]字段预览: {', '.join(list(data[0].keys())[:8]) if data else '无'}[/]\n"
+        "[dim]正在连接 DeepSeek 并生成分析开场白...[/]",
         border_style="cyan"
     ))
 
     session = AnalystSession(data, data_file)
 
-    console.print("\n  [dim]AI 分析中...[/]\n")
+    console.print()
+    # 先打印表头，然后直接流式输出，不用 spinner 遮挡
+    console.print("[bold cyan]━━━ 🤖 AI 分析中 ━━━[/]")
+    console.print()
     greeting = session.analyst.greet_and_analyze()
-    console.print(Panel(
-        Markdown(greeting),
-        title="🤖 AI 分析师",
-        border_style="cyan",
-        padding=(1, 2),
-    ))
 
-    chat_loop_analyst(session)
+    result = chat_loop_analyst(session)
+
+    # 如果是退出（不是 MENU），自动生成完整报告
+    if result != "MENU":
+        _generate_report_after_ai_chat(session, data_file)
+
+
+def _do_generate_report(session: 'AnalystSession', data_file: Path, *, in_chat: bool = False):
+    """核心报告生成：跑分析工具 + 写 .md + qa.json + 询问 HTML
+
+    Parameters
+    ----------
+    in_chat : True 表示在 AI 对话中被触发（用户说"导出报告"等）；
+              False 表示在 AI 对话退出后被调用。两者 UI 提示风格略有不同。
+    """
+    from report.generator import generate_report, generate_html_from_markdown
+    # 实际只用到 4 个分析函数：basic_stats / sentiment / word_freq / insight_mining
+    # 它们分散在 quantitative 和 qualitative 两个模块里
+    from analysis.quantitative import basic_stats, sentiment_analysis, word_frequency
+    try:
+        from analysis.qualitative import insight_mining
+    except ImportError:
+        # 老版本可能没有 qualitative 模块，回退拿一个空的
+        logger.warning("analysis.qualitative 不可用，insight_mining 跳过")
+        insight_mining = None
+
+    # 1) 跑分析工具
+    data = session.analyst.data
+    results: dict = {}
+    try:
+        results["basic_stats"] = basic_stats(data, data_file)
+        from analysis.quantitative import auto_detect_fields
+        ftypes = auto_detect_fields(data)
+        if any(t == "text" for t in ftypes.values()):
+            try:
+                # 注意：sentiment_analysis / word_frequency 的第二参数是 text_field（字段名），
+                # 不传让它自动检测文本字段，不要传 data_file
+                results["sentiment"] = sentiment_analysis(data)
+            except Exception as e:
+                logger.debug("情感分析跳过: %s", e)
+        try:
+            results["word_freq"] = word_frequency(data)
+        except Exception as e:
+            logger.debug("词频跳过: %s", e)
+        if insight_mining is not None:
+            try:
+                results["insight_mining"] = insight_mining(data)
+            except Exception as e:
+                logger.debug("洞察跳过: %s", e)
+    except Exception as e:
+        logger.warning("分析工具运行失败: %s", e)
+
+    crawler_info = {
+        "platform": "AI 分析师驱动",
+        "name": data_file.stem,
+        "crawl_method": "AI 对话式分析",
+    }
+
+    # 2) 写 .md 到数据文件同目录
+    if in_chat:
+        console.print("  [cyan]📝 正在为你生成 Markdown 报告...[/]")
+    else:
+        console.print("\n  [cyan]📝 正在生成 Markdown 报告...[/]")
+    report = generate_report(
+        crawler_info=crawler_info,
+        analysis_results=results,
+        data_file=data_file,
+        output_dir=data_file.parent,
+        conversation=session.history,
+        formats=("md", "qa_json"),
+    )
+    md_path = report["md"]
+
+    if in_chat:
+        # 对话中触发：简洁一行的反馈
+        console.print(f"  [green]✅ Markdown 报告已生成：[/][bold]{md_path}[/]")
+    else:
+        console.print(Panel.fit(
+            "\n".join([
+                "[bold green]✅ Markdown 报告已生成！[/]",
+                "",
+                f"📝 {md_path}",
+                f"📦 原始数据（AI 问答用）: [dim]{report.get('qa_json', '')}[/]",
+            ]),
+            border_style="green",
+            title="[bold]📊 Markdown 报告（七段式：执行摘要 / 数据说明 / 工具说明 / 分析结果 / 关键发现 / 启示预测）[/]",
+        ))
+
+    # 3) 询问是否要 HTML
+    from rich.prompt import Confirm
+    if not Confirm.ask("  生成 HTML 可视化报告？", default=True):
+        console.print(f"  [dim]已跳过 HTML 生成；Markdown 在 {md_path}。[/]")
+        return report
+
+    # 4) 让 LLM 读 .md → 写更丰富的 .html
+    console.print("  [cyan]🔮 正在让 LLM 读懂 Markdown 并生成精美 HTML...[/]")
+    html_path = generate_html_from_markdown(md_path)
+    if html_path is None:
+        console.print("  [red]✗ HTML 生成失败[/]")
+        return report
+
+    console.print(f"  [green]✅ HTML 报告: [bold]{html_path}[/][/]")
+    report["html"] = html_path
+
+    if Confirm.ask("  在浏览器中打开 HTML 报告？", default=True):
+        import webbrowser
+        webbrowser.open(f"file://{html_path}")
+
+    if Confirm.ask("  导出 PDF？", default=False):
+        from report.generator import export_pdf
+        pdf_path = export_pdf(html_path)
+        if pdf_path:
+            console.print(f"  [green]✓[/] PDF: [bold]{pdf_path}[/]")
+
+    return report
+
+
+def _generate_report_after_ai_chat(session: 'AnalystSession', data_file: Path):
+    """AI 对话退出后 → 调用 _do_generate_report"""
+    _do_generate_report(session, data_file, in_chat=False)
+
+
+# 导出报告的关键词 —— 在 AI 对话中识别后立即触发报告生成
+_EXPORT_TRIGGERS = (
+    "导出报告", "生成报告", "出报告", "导出 markdown", "生成 markdown",
+    "导出md", "生成md", "出md", "导出全部结果", "保存报告", "保存为报告",
+    "我要报告", "给我报告", "下载报告", "写报告", "写一份报告",
+    "report", "markdown 报告", "md 报告",
+)
+
+
+def _is_export_report_request(text: str) -> bool:
+    """判断用户消息是否是"导出报告"类指令"""
+    t = text.strip().lower()
+    if not t:
+        return False
+    for kw in _EXPORT_TRIGGERS:
+        if kw in t:
+            return True
+    return False
 
 
 def chat_loop_analyst(session: AnalystSession):
     """AI 分析对话循环"""
-    completer = WordCompleter(["情感分析", "词频统计", "趋势分析", "总结", "建议", "exit", "help"])
+    completer = WordCompleter(["情感分析", "词频统计", "趋势分析", "总结", "建议",
+                                "导出报告", "生成报告", "exit", "help", "返回主菜单"])
     console.print(Panel.fit(
         "[bold]现在可以指挥 AI 做分析了[/]\n"
-        "[dim]输入分析需求，AI 自动写代码执行 | exit 退出 | help 帮助[/]",
+        "[dim]输入分析需求，AI 自动写代码执行 | exit 退出 | help 帮助 | menu 返回主菜单[/]\n\n"
+        "[bold yellow]💡 提示：[/]\n"
+        "  · 输入 [bold]exit[/] 退出对话后，会[bold]自动生成 .md 报告[/]\n"
+        "  · 在对话中说 [bold]\"导出报告\"[/] / [bold]\"生成 markdown\"[/] —— "
+        "[green]系统会为你生成报告[/]，[bold]不退出对话[/]\n"
+        "  · 输入 [bold]menu[/] 或 [bold]返回主菜单[/] 回到主菜单，也会自动生成报告",
         border_style="dim"
     ))
 
@@ -253,6 +367,8 @@ def chat_loop_analyst(session: AnalystSession):
         completer=completer,
     )
 
+    data_file = session.data_file
+
     while True:
         try:
             user_input = prompt_session.prompt(
@@ -261,22 +377,41 @@ def chat_loop_analyst(session: AnalystSession):
             if not user_input:
                 continue
 
+            # === 返回主菜单 ===
+            if user_input.lower() in ("menu", "返回主菜单"):
+                console.print("  [dim]返回主菜单...[/]")
+                _generate_report_after_ai_chat(session, data_file)
+                return "MENU"
+
+            # === 导出报告 ===
+            if _is_export_report_request(user_input):
+                with console.status(
+                    "[bold cyan]📊 正在为你生成报告...[/]",
+                    spinner="dots",
+                    spinner_style="cyan",
+                ):
+                    _do_generate_report(session, data_file, in_chat=True)
+                console.print("  [dim]（已生成报告；继续对话或输入 exit 退出）[/]\n")
+                continue
+
+            # 不藏 spinner，直接流式输出
+            console.print()
+            console.print("[bold cyan]━━━ 🤖 AI 分析中 ━━━[/]")
+            console.print()
             result = session.process_message(user_input)
+
             if result == "__EXIT__":
                 break
 
+            # 如果 LLM 已经在 chat() 里流式输出过，这里不再重复包裹
+            # 只追加换行分隔
             console.print()
-            console.print(Panel(
-                Markdown(result),
-                title="🤖 AI 分析师",
-                border_style="cyan",
-                padding=(1, 2),
-            ))
+            console.print("[dim]──[/]")
             console.print()
 
         except KeyboardInterrupt:
-            console.print("\n  [dim]再见！[/]")
-            break
+            console.print("\n  [dim]已中断当前思考，继续对话或输入 exit 退出[/]\n")
+            continue
         except EOFError:
             break
 
@@ -334,9 +469,13 @@ def run_analysis_flow(data: list, data_file: Path, output_dir: Path = None):
     if output_dir is None:
         output_dir = data_file.parent
 
-    console.print("\n  [cyan]📝 正在生成报告...[/]")
-    report_path = generate_report(crawler_info, results, data_file, output_dir)
-    console.print(f"  [green]✓[/] 报告已生成: [bold]{report_path}[/]")
+    console.print("\n  [cyan]📝 正在生成 Markdown 报告...[/]")
+    report = generate_report(
+        crawler_info, results, data_file, data_file.parent,
+        formats=("md", "qa_json"),
+    )
+    md_path = report["md"]
+    console.print(f"  [green]✓[/] Markdown: [bold]{md_path}[/]")
 
     report_data = {
         "crawler": crawler_info,
@@ -345,36 +484,31 @@ def run_analysis_flow(data: list, data_file: Path, output_dir: Path = None):
         "generated_at": datetime.now().isoformat(),
     }
 
-    json_path = report_path.with_suffix(".qa.json")
-    json_path.write_text(json.dumps(report_data, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
-
-    if confirm_step("导出为 PDF？"):
-        _export_pdf(report_path)
+    # 询问是否要 HTML
+    if confirm_step("生成 HTML 可视化报告？"):
+        from report.generator import generate_html_from_markdown
+        console.print("  [cyan]🔮 正在让 LLM 读懂 Markdown 并生成精美 HTML...[/]")
+        html_path = generate_html_from_markdown(md_path)
+        if html_path:
+            console.print(f"  [green]✓[/] HTML: [bold]{html_path}[/]")
+            if confirm_step("导出 PDF？"):
+                _export_pdf(html_path)
+            if confirm_step("在浏览器中打开？"):
+                import webbrowser
+                webbrowser.open(f"file://{html_path}")
+            # 让后续 AI 问答用上 HTML
+            report_for_chat = html_path
+        else:
+            report_for_chat = md_path
+    else:
+        report_for_chat = md_path
 
     if confirm_step("进入AI问答模式？"):
-        chat_loop(report_path, report_data)
+        chat_loop_analyst_with_report(report_for_chat, report_data)
 
-    _show_summary(report_path, data_file)
+    from cli._dispatch import show_summary
+    show_summary(report_for_chat, data_file)
     return report_data
-
-
-def _show_summary(report_path: Path, data_file: Path):
-    console.clear()
-    console.print()
-    console.print(Panel.fit(
-        "\n".join([
-            "[bold green]✅ 分析完成！[/]",
-            "",
-            f"📊 报告文件: [bold cyan]{report_path}[/]",
-            f"📁 数据文件: [bold cyan]{data_file}[/]",
-        ]),
-        border_style="green",
-        title="[bold]任务总结[/]",
-    ))
-    console.print()
-    if confirm_step("在浏览器中打开报告？"):
-        import webbrowser
-        webbrowser.open(f"file://{report_path}")
 
 
 def _export_pdf(html_path: Path):
@@ -394,142 +528,157 @@ def _export_pdf(html_path: Path):
 def main():
     show_welcome()
 
-    # 检测已保存的会话
-    sessions = AnalystSession.list_sessions()
-    if sessions:
-        console.print()
-        console.print(Panel.fit(
-            "[bold yellow]📋 发现已保存的分析会话[/]",
-            border_style="yellow"
-        ))
-        from rich.table import Table
-        t = Table(show_header=True, header_style="bold")
-        t.add_column("#", width=4)
-        t.add_column("时间", width=18)
-        t.add_column("数据文件", width=30)
-        t.add_column("对话", width=8)
-        for i, s in enumerate(sessions, 1):
-            fname = Path(s["file"]).name if s["file"] else "?"
-            t.add_row(str(i), s["saved"], fname, f"{s['messages']}轮")
-        t.add_row("n", "—", "开始新分析", "—")
-        console.print(t)
-        console.print()
+    while True:
+        # 检测已保存的会话
+        sessions = AnalystSession.list_sessions()
+        if sessions:
+            console.print()
+            console.print(Panel.fit(
+                "[bold yellow]📋 发现已保存的分析会话[/]",
+                border_style="yellow"
+            ))
+            from rich.table import Table
+            t = Table(show_header=True, header_style="bold")
+            t.add_column("#", width=4)
+            t.add_column("时间", width=18)
+            t.add_column("数据文件", width=30)
+            t.add_column("对话", width=8)
+            for i, s in enumerate(sessions, 1):
+                fname = Path(s["file"]).name if s["file"] else "?"
+                t.add_row(str(i), s["saved"], fname, f"{s['messages']}轮")
+            t.add_row("n", "—", "开始新分析", "—")
+            console.print(t)
+            console.print()
 
-        choice = Prompt.ask("[bold]选择会话[/]", default="n")
-        if choice.isdigit():
-            idx = int(choice) - 1
-            if 0 <= idx < len(sessions):
-                _resume_session(sessions[idx]["id"])
-                return
+            choice = Prompt.ask("[bold]选择会话[/]", default="n")
+            if choice.isdigit():
+                idx = int(choice) - 1
+                if 0 <= idx < len(sessions):
+                    _resume_session(sessions[idx]["id"])
+                    continue
 
-    mode = select_mode()
-    if not mode:
-        console.print("\n[yellow]已取消[/]")
-        return
-
-    save_mode_state(mode)
-
-    # 延迟导入 cli/commands（避免循环引用）
-    from cli.commands import (
-        natural_language_crawl, run_skill_template, manage_schedule,
-        start_web_ui, login_setup, check_and_login_if_needed,
-        run_batch_analysis,
-    )
-
-    if mode == "nl_crawl":
-        natural_language_crawl(load_data, run_ai_analysis_flow)
-        return
-
-    if mode == "template":
-        run_skill_template(load_data, preview_data, run_ai_analysis_flow)
-        return
-
-    if mode == "schedule":
-        manage_schedule()
-        return
-
-    if mode == "web":
-        start_web_ui()
-        return
-
-    if mode == "login":
-        login_setup()
-        return
-
-    if mode == "existing":
-        if confirm_step("批量对比多个数据文件？"):
-            files = select_multiple_files()
-            if files:
-                run_batch_analysis(files, load_data)
-            return
-
-        data_file = select_existing_file()
-        if not data_file:
+        mode = select_mode()
+        if not mode:
             console.print("\n[yellow]已取消[/]")
-            return
+            continue
 
-        console.print(f"\n  [dim]正在加载数据...[/]")
-        data = load_data(data_file)
-        if not data:
-            console.print("[red]✗ 数据为空或无法读取[/]")
-            return
+        save_mode_state(mode)
 
-        if not preview_data(data, data_file):
-            console.print("\n[yellow]已取消[/]")
-            return
+        # cli/commands 只依赖 cli._dispatch（通过 cli.commands 间接 import），
+        # 不再反向 import main，所以这里可以安全顶层导入。
+        from cli.commands import (
+            natural_language_crawl, run_skill_template, manage_schedule,
+            start_web_ui, login_setup, check_and_login_if_needed,
+            run_batch_analysis, start_physical_world_ui,
+            start_city_heatmap_ui,
+        )
 
-        run_ai_analysis_flow(data, data_file)
-        return
+        if mode == "nl_crawl":
+            natural_language_crawl(load_data, run_ai_analysis_flow)
+            continue
 
-    else:
-        crawler_selection = select_crawler()
-        if not crawler_selection:
-            console.print("\n[yellow]已取消[/]")
-            return
+        if mode == "template":
+            run_skill_template(load_data, preview_data, run_ai_analysis_flow)
+            continue
 
-        crawler_key, crawler_info = crawler_selection
-        save_crawler_state(crawler_key)
+        if mode == "schedule":
+            manage_schedule()
+            continue
 
-        args = get_crawler_args(crawler_info)
+        if mode == "web":
+            start_web_ui()
+            continue
 
-        check_and_login_if_needed(crawler_key)
+        if mode == "login":
+            login_setup()
+            continue
 
-        if not confirm_step("确认运行爬虫？"):
-            console.print("\n[yellow]已取消[/]")
-            return
+        if mode == "physical":
+            start_physical_world_ui()
+            continue
 
-        output_dir = run_crawler(crawler_key, args)
-        files = get_latest_output_files(output_dir)
+        if mode == "cityheat":
+            start_city_heatmap_ui()
+            continue
 
-        if not files:
-            console.print("\n[red]✗ 未找到输出文件[/]")
-            return
+        if mode == "existing":
+            if confirm_step("批量对比多个数据文件？"):
+                files = select_multiple_files()
+                if files:
+                    run_batch_analysis(files, load_data)
+                continue
 
-        data_file = files[0]
-        if len(files) > 1:
-            console.print("\n  [bold]找到多个输出文件:[/]")
-            for i, f in enumerate(files, 1):
-                console.print(f"    {i}. {f.name}")
-            try:
-                choice = int(input("  选择: ")) - 1
-                if 0 <= choice < len(files):
-                    data_file = files[choice]
-            except (ValueError, IndexError):
-                pass
+            data_file = select_existing_file()
+            if not data_file:
+                console.print("\n[yellow]已取消[/]")
+                continue
 
-        console.print(f"\n  [green]✓[/] 数据文件: [bold]{data_file.name}[/]")
+            console.print(f"\n  [dim]正在加载数据...[/]")
+            data = load_data(data_file)
+            if not data:
+                console.print("[red]✗ 数据为空或无法读取[/]")
+                continue
 
-        console.print("\n  [dim]正在加载数据...[/]")
-        data = load_data(data_file)
-        if not data:
-            console.print("[red]✗ 数据为空或无法读取[/]")
-            return
+            if not preview_data(data, data_file):
+                console.print("\n[yellow]已取消[/]")
+                continue
 
-        if not preview_data(data, data_file):
-            console.print("\n[yellow]已取消[/]")
-            return
+            run_ai_analysis_flow(data, data_file)
+            console.print()
+            console.print("[dim]已保存报告，返回主菜单...[/]")
+            continue
 
-        run_ai_analysis_flow(data, data_file)
+        else:
+            crawler_selection = select_crawler()
+            if not crawler_selection:
+                console.print("\n[yellow]已取消[/]")
+                continue
+
+            crawler_key, crawler_info = crawler_selection
+            save_crawler_state(crawler_key)
+
+            args = get_crawler_args(crawler_info)
+
+            check_and_login_if_needed(crawler_key)
+
+            if not confirm_step("确认运行爬虫？"):
+                console.print("\n[yellow]已取消[/]")
+                continue
+
+            output_dir = run_crawler(crawler_key, args)
+            files = get_latest_output_files(output_dir)
+
+            if not files:
+                console.print("\n[red]✗ 未找到输出文件[/]")
+                continue
+
+            data_file = files[0]
+            if len(files) > 1:
+                console.print("\n  [bold]找到多个输出文件:[/]")
+                for i, f in enumerate(files, 1):
+                    console.print(f"    {i}. {f.name}")
+                try:
+                    choice = Prompt.ask("  [bold]选择[/]", default="1")
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(files):
+                        data_file = files[idx]
+                except (ValueError, IndexError):
+                    pass
+
+            console.print(f"\n  [green]✓[/] 数据文件: [bold]{data_file.name}[/]")
+
+            console.print("\n  [dim]正在加载数据...[/]")
+            data = load_data(data_file)
+            if not data:
+                console.print("[red]✗ 数据为空或无法读取[/]")
+                continue
+
+            if not preview_data(data, data_file):
+                console.print("\n[yellow]已取消[/]")
+                continue
+
+            run_ai_analysis_flow(data, data_file)
+            continue
 
 
 def _resume_session(session_id: str):
@@ -549,8 +698,8 @@ def _resume_session(session_id: str):
     run_ai_analysis_flow(data, data_file)
 
 
-def chat_loop(report_path: Path, report_data: dict):
-    """基于报告的 AI 问答（旧模式，保留兼容）"""
+def chat_loop_analyst_with_report(report_path: Path, report_data: dict):
+    """基于报告的 AI 问答（用 AnalystSession 而不是旧版）"""
     session = AnalystSession(
         [{"k": str(v)[:200] for k, v in item.items()} for item in [report_data]],
         report_path,
@@ -571,9 +720,17 @@ if __name__ == "__main__":
         if not ConfigValidator.print_status():
             console.print("\n[yellow]提示: 部分配置缺失，某些功能可能不可用[/]")
 
+        # 启动前一次性 ping Web 工作台状态，给个提示
+        try:
+            from cli._helpers import ping_api
+            web_status = "[green]online[/]" if ping_api("http://127.0.0.1:9527") else "[dim]offline（菜单 6 可启动）[/]"
+            console.print(f"  [dim]💡 Web UI 状态: {web_status}[/]")
+        except Exception:
+            pass
+
         main()
     except KeyboardInterrupt:
-        console.print("\n\n[yellow]用户中断[/]")
+        console.print("\n\n[yellow]👋 已退出 Insight Agent[/]")
         sys.exit(0)
     except Exception as e:
         logger.error(f"程序异常退出: {e}", exc_info=True)

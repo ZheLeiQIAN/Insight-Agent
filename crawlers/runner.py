@@ -34,19 +34,10 @@ def build_command(crawler_key: str, args: dict) -> Tuple[list, Path]:
         if args.get("type"):
             cmd.extend(["-t", args["type"]])
 
-    elif platform in ["知乎", "小红书"]:
+    elif platform in ["知乎", "小红书", "抖音"]:
         if args.get("url"):
             cmd.append(args["url"])
-        if args.get("max"):
-            cmd.extend(["--max", str(args["max"])])
-
-    elif platform == "抖音":
-        if args.get("url"):
-            cmd.append(args["url"])
-        if args.get("max"):
-            cmd.extend(["--max", str(args["max"])])
-        # 不再强制 --headless，由爬虫根据 session 状态智能决定
-        # 首次运行会弹出浏览器让用户登录，之后自动 headless
+        # 不再限制抓取量，由爬虫脚本自己滚到自然结束
 
     elif platform == "哔哩哔哩":
         bv_list = args.get("bv_list", [])
@@ -63,8 +54,6 @@ def build_command(crawler_key: str, args: dict) -> Tuple[list, Path]:
                 if m:
                     product_id = m.group(1)
             cmd.append(str(product_id))
-        if args.get("max"):
-            cmd.extend(["--max", str(args["max"])])
 
     elif platform == "豆瓣":
         mode = args.get("mode", "book")
@@ -76,8 +65,6 @@ def build_command(crawler_key: str, args: dict) -> Tuple[list, Path]:
     elif platform == "通用网页":
         if args.get("url"):
             cmd.append(args["url"])
-        if args.get("max"):
-            cmd.extend(["--max", str(args["max"])])
         if args.get("mode"):
             cmd.extend(["--mode", str(args["mode"])])
 

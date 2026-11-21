@@ -14,12 +14,12 @@
 
 ```bash
 # 交互模式
-python tools/webui_manager.py
+python webui/webui_manager.py
 
 # 命令行模式
-python tools/webui_manager.py start    # 后台启动
-python tools/webui_manager.py status   # 查看状态
-python tools/webui_manager.py stop     # 停止服务器
+python webui/webui_manager.py start    # 后台启动
+python webui/webui_manager.py status   # 查看状态
+python webui/webui_manager.py stop     # 停止服务器
 ```
 
 **优势**：
@@ -55,7 +55,7 @@ python web/server.py
 
 ```bash
 # 终端 1：启动 Web UI（后台）
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 终端 2：运行 CLI 分析
 python main.py
@@ -72,7 +72,7 @@ python main.py
 
 ```bash
 # 启动 Web 服务器
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 终端可以做其他事情
 # 比如：查看日志、运行其他脚本...
@@ -81,17 +81,17 @@ python tools/webui_manager.py start
 # http://localhost:9527
 
 # 需要时停止服务器
-python tools/webui_manager.py stop
+python webui/webui_manager.py stop
 ```
 
 ### 场景 3：多用户协作
 
 ```bash
 # 用户 A：启动 Web UI
-python tools/webui_manager.py start --port 9527
+python webui/webui_manager.py start --port 9527
 
 # 用户 B：启动另一个实例
-python tools/webui_manager.py start --port 9528
+python webui/webui_manager.py start --port 9528
 
 # 两个用户可以同时使用不同端口
 ```
@@ -138,7 +138,7 @@ def start_server_background():
 ### 查看服务器状态
 
 ```bash
-python tools/webui_manager.py status
+python webui/webui_manager.py status
 ```
 
 **输出示例**：
@@ -170,7 +170,7 @@ grep "ERROR" output/app.log
 
 ```bash
 # 一键启动
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 浏览器自动打开
 # 终端显示：
@@ -183,7 +183,7 @@ python tools/webui_manager.py start
 
 ```bash
 # 终端 1
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 终端 2
 python main.py
@@ -203,7 +203,7 @@ python main.py
 # start_services.sh
 
 # 启动 Web UI
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 等待服务器启动
 sleep 2
@@ -215,7 +215,7 @@ python analyze_data.py
 python generate_report.py
 
 # 停止服务器
-python tools/webui_manager.py stop
+python webui/webui_manager.py stop
 ```
 
 ---
@@ -233,7 +233,7 @@ lsof -i :9527  # 查看占用进程
 kill -9 <PID>  # 停止进程
 
 # 或使用其他端口
-python tools/webui_manager.py start --port 8080
+python webui/webui_manager.py start --port 8080
 ```
 
 ### 2. 服务器停止
@@ -241,7 +241,7 @@ python tools/webui_manager.py start --port 8080
 ```bash
 # 后台服务器会在主程序退出时自动停止
 # 如果需要手动停止
-python tools/webui_manager.py stop
+python webui/webui_manager.py stop
 ```
 
 ### 3. 日志查看
@@ -261,7 +261,7 @@ grep "web.server" output/app.log
 ### 1. 自定义端口
 
 ```bash
-python tools/webui_manager.py start --port 8080
+python webui/webui_manager.py start --port 8080
 ```
 
 ### 2. 绑定所有接口
@@ -303,15 +303,15 @@ docker-compose up -d
 
 **A**: 可以，但需要使用不同端口：
 ```bash
-python tools/webui_manager.py start --port 9527
-python tools/webui_manager.py start --port 9528
+python webui/webui_manager.py start --port 9527
+python webui/webui_manager.py start --port 9528
 ```
 
 ### Q3: 如何查看服务器是否在运行？
 
 **A**:
 ```bash
-python tools/webui_manager.py status
+python webui/webui_manager.py status
 ```
 
 ### Q4: 服务器崩溃了怎么办？
@@ -322,8 +322,8 @@ python tools/webui_manager.py status
 tail -f output/app.log
 
 # 重启服务器
-python tools/webui_manager.py stop
-python tools/webui_manager.py start
+python webui/webui_manager.py stop
+python webui/webui_manager.py start
 ```
 
 ---
@@ -334,7 +334,7 @@ python tools/webui_manager.py start
 
 ✅ **推荐使用**：
 ```bash
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 ```
 
 ✅ **终端可继续操作**

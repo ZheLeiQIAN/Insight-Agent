@@ -77,9 +77,14 @@ class Scheduler:
             })
         return result
 
-    def remove(self, job_id: str):
+    def remove(self, job_id: str) -> bool:
+        """删除任务，返回是否真的删除了（False 表示 ID 不存在）"""
+        before = len(self.jobs)
         self.jobs = [j for j in self.jobs if j["id"] != job_id]
+        if len(self.jobs) == before:
+            return False
         self._save()
+        return True
 
     def run_now(self) -> list:
         """立即执行所有到期任务"""
@@ -113,8 +118,8 @@ class Scheduler:
                                 continue
 
                         crawler_info = {"platform": CRAWLER_SCRIPTS[job["crawler"]]["platform"], "name": files[0].name}
-                        report_path = generate_report(crawler_info, results_data, files[0], output_dir)
-                        results.append({"job": job["id"], "status": "✅", "report": str(report_path)})
+                        report = generate_report(crawler_info, results_data, files[0], output_dir)
+                        results.append({"job": job["id"], "status": "✅", "report": str(report['html'])})
                     else:
                         results.append({"job": job["id"], "status": "⚠️ 无数据"})
                 else:

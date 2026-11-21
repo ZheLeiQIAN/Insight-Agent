@@ -36,6 +36,9 @@ if not LLM_API_KEY:
     )
 
 # === 爬虫脚本映射 ===
+# 需要预登录的平台 key 集合：使用前必须先在 mode 7 登录，否则爬取会失败
+REQUIRES_LOGIN: set[str] = {"douyin", "zhihu", "xiaohongshu", "tmall", "jd"}
+
 CRAWLER_SCRIPTS = {
     "zhihu": {
         "name": "知乎回答爬虫",

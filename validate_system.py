@@ -189,7 +189,7 @@ def main():
         console.print("\n[bold green]🎉 系统验证全部通过！[/]")
         console.print("\n💡 可以开始使用:")
         console.print("   python main.py          # CLI 模式")
-        console.print("   python tools/webui_manager.py start  # Web UI")
+        console.print("   python webui/webui_manager.py start  # Web UI")
         console.print("   python examples/full_workflow_demo.py  # 完整演示")
     else:
         console.print("\n[bold yellow]⚠️ 部分组件验证失败，请检查配置[/]")

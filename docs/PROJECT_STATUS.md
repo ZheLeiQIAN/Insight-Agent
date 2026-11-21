@@ -133,13 +133,12 @@ cp .env.example .env
 ### 启动
 ```bash
 # CLI 模式
-./insight
+python main.py
+# 或装成全局命令后用 `insight`
 
 # Web UI 模式
-./insight web
-
-# 验证系统
-./insight validate
+python main.py
+# 进入菜单后选 6（Web UI）
 ```
 
 ---
@@ -150,78 +149,18 @@ cp .env.example .env
 
 #### 启动
 ```bash
-./insight
+python main.py
 ```
 
-#### 常用命令
-```bash
-# 查看帮助
-Insight › help
-
-# 查看工具
-Insight › tools
-
-# 数据爬取
-Insight › crawl zhihu
-Insight › crawl bilibili --max 100
-
-# 数据分析
-Insight › analyze data.csv
-Insight › analyze data.csv --template sentiment
-
-# AI 对话
-Insight › chat
-Insight › chat --file data.csv
-
-# Web UI
-Insight › web
-Insight › web --port 8080
-
-# 系统验证
-Insight › validate
-
-# 配置管理
-Insight › config show
-Insight › config set LLM_MODEL deepseek-chat
-
-# 主题切换
-Insight › theme dark
-Insight › theme light
-
-# 命令历史
-Insight › history
-Insight › stats
-```
-
-#### 智能提示
-```bash
-Insight › crawl
-💡 可用选项: zhihu, bilibili, xiaohongshu, douyin, cnki
-
-Insight › analyze
-💡 可用选项: --template, --format, --output, --verbose
-
-Insight › tools
-💡 可用选项: --category, --list, --search
-```
-
-#### 自动补全
-```bash
-# 按 Tab 键自动补全
-Insight › cr<TAB>
-Insight › crawl
-
-Insight › analyze --t<TAB>
-Insight › analyze --template
-```
-
-#### 快捷键
-```bash
-Ctrl+C  - 取消当前操作
-Ctrl+L  - 清屏
-Ctrl+R  - 搜索历史
-Ctrl+D  - 退出
-```
+#### 菜单模式
+进入后是 7 个选项的菜单（不是 `Insight ›` 命令行），直接用数字键选：
+- `1` 抓取新数据
+- `2` 分析已有数据
+- `3` 自然语言启动
+- `4` 分析模板
+- `5` 定时任务
+- `6` 启动 Web UI
+- `7` 登录管理
 
 ---
 
@@ -229,9 +168,10 @@ Ctrl+D  - 退出
 
 #### 启动
 ```bash
-./insight web
+python main.py
+# 进入菜单后选 6
 # 或
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 ```
 
 #### 访问
@@ -527,17 +467,18 @@ Insight › tools
 
 ### 1. 验证系统
 ```bash
-./insight validate
+python validate_system.py
 ```
 
 ### 2. 启动 CLI
 ```bash
-./insight
+python main.py
 ```
 
 ### 3. 启动 Web UI
 ```bash
-./insight web
+python main.py
+# 进入菜单后选 6
 ```
 
 ### 4. 运行演示
@@ -565,7 +506,6 @@ cat WEB_UI_GUIDE.md
 
 ### 验证系统
 ```bash
-./insight validate
 python validate_system.py
 ```
 

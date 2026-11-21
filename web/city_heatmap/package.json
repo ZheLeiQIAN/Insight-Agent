@@ -1,0 +1,17 @@
+{
+  "name": "insight-agent-city-heatmap",
+  "version": "0.1.0",
+  "description": "Insight Agent - 城市热区图·人群粒子流·行为分析",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

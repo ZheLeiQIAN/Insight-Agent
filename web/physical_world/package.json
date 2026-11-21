@@ -1,0 +1,24 @@
+{
+  "name": "insight-agent-physical-world",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Insight Agent 2.0 — 物理世界分析子系统（Vite + MediaPipe + TensorFlow.js）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5",
+    "@mediapipe/hands": "^0.4.1675469240",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@tensorflow/tfjs": "^4.20.0",
+    "@tensorflow-models/coco-ssd": "^2.2.3"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

@@ -14,6 +14,22 @@ from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_MAX_TOKENS, OUTPUT_
 
 logger = logging.getLogger(__name__)
 
+# Rich console（用于流式输出，与 main.py 的 TUI spinner 兼容）
+try:
+    from rich.console import Console as _RichConsole
+    _console = _RichConsole()
+except Exception:
+    _console = None
+
+def _stream_print(token: str) -> None:
+    """流式输出单个 token。优先用 Rich console，避免破坏 TUI spinner。"""
+    if not token:
+        return
+    if _console is not None:
+        _console.print(token, end="", highlight=False)
+    else:
+        print(token, end="", flush=True)
+
 # 会话存储目录
 SESSION_DIR = OUTPUT_DIR / "sessions"
 SESSION_DIR.mkdir(parents=True, exist_ok=True)
@@ -22,12 +38,12 @@ _AGENT_LOADED = False
 
 
 def _ensure_agent():
-    """确保 Agent 内核已加载"""
+    """确保 Agent 内核已加载（agent_kernel/ 目录，源自 hermes-agent 项目）"""
     global _AGENT_LOADED
     if _AGENT_LOADED:
         return
 
-    core_path = Path(__file__).parent.parent / "agent_core"
+    core_path = Path(__file__).parent.parent / "agent_kernel"
 
     # 多个可能的路径
     possible_paths = [
@@ -66,7 +82,7 @@ class InsightAnalyst:
                 provider="deepseek",
                 enabled_toolsets=["file", "terminal", "web"],
                 max_iterations=30,
-                quiet_mode=False,
+                quiet_mode=True,
                 skip_context_files=True,
                 skip_memory=True,
             )
@@ -115,6 +131,7 @@ class InsightAnalyst:
 ## 📊 当前数据
 
 **文件**: {self.data_file.name}
+**数据所在目录**: `{self.data_file.parent}`  ← 报告（Markdown / HTML）会保存到这里
 **记录数**: {self.record_count} 条
 **字段数**: {len(self.columns)} 个
 
@@ -182,9 +199,33 @@ class InsightAnalyst:
 ### 代码规范
 
 - 数据文件路径: {self.data_file}
+- 报告（Markdown / HTML）会保存到数据文件同目录：`{self.data_file.parent}`
 - 字段名如上述字段列表所示（中文）
 - 结果用 print() 输出，清晰标注
 - 优先使用专业工具，其次才是自定义代码
+
+### 关于报告路径（重要）
+当用户问"报告在哪"、"打开报告文件夹"、"生成的报告在哪里"、"导出报告"、"生成 markdown"等问题时：
+
+1. **你拥有完整的 file/terminal/web 工具**（write_file / read_file / terminal / web_search / web_extract / search_files / patch / process）。
+   当用户要求"导出报告"/"生成 markdown"/"保存报告"时，**你应当主动使用 write_file 工具**把 Markdown 报告写到
+   `{self.data_file.parent}/analysis_<时间戳>.md`，而不是仅仅口头上说"好的我来生成"。
+
+2. 报告保存位置：**数据文件同目录** `{self.data_file.parent}`
+   文件名前缀固定为 `analysis_<时间戳>.{{md,html,qa.json}}`
+
+3. **HTML 可视化报告**仍由 TUI 系统层负责（exit 后系统会询问用户是否生成 HTML，并调用
+   `generate_html_from_markdown()` 用 LLM 改写 .md → .html）。你只需要产出 .md 即可，HTML 不必你手动写。
+
+4. **如果你希望立刻看到 .md 文件落盘**，用 `write_file` 工具：
+   - 文件名：`{self.data_file.parent}/analysis_<YYYYMMDD_HHMMSS>.md`
+   - 内容：七段式 Markdown（执行摘要 / 数据说明 / 工具说明 / 分析结果 / 关键发现 / 启示预测 / 附录）
+   - 写完用 `read_file` 工具验一下，然后告诉用户文件路径
+
+5. **TUI 系统层有兜底**：如果你不想主动调工具，TUI 在用户说"导出报告"等关键词时也会自动生成。
+   但更专业的做法是**你自己用 write_file 工具**——更灵活、更可定制。
+
+6. **重要**：不要在回复里写假的文件路径；只在 `write_file` 工具真返回成功后，才告诉用户路径。
 
 ## 语言风格
 - 专业但亲切，像同事讨论数据
@@ -200,8 +241,7 @@ class InsightAnalyst:
         """对话（流式输出）"""
         # 流式回调：逐 token 打印到终端
         def stream_token(token: str):
-            if token:
-                print(token, end="", flush=True)
+            _stream_print(token)
 
         try:
             # 如果 Agent 加载成功，使用完整模式
@@ -235,7 +275,7 @@ class InsightAnalyst:
 
         try:
             # 流式输出
-            print("  ", end="", flush=True)
+            _stream_print("  ")
             response = client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=messages,
@@ -248,10 +288,10 @@ class InsightAnalyst:
             for chunk in response:
                 if chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
-                    print(content, end="", flush=True)
+                    _stream_print(content)
                     full_response.append(content)
 
-            print()  # 换行
+            _stream_print("\n")  # 换行
             return "".join(full_response)
         except Exception as e:
             return f"❌ API 调用失败: {e}"

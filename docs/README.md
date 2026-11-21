@@ -8,6 +8,7 @@
 | [WEB_UI_GUIDE.md](WEB_UI_GUIDE.md) | Web UI 使用指南：启动方式、功能说明、故障排除 |
 | [ANALYSIS_TOOLS_GUIDE.md](ANALYSIS_TOOLS_GUIDE.md) | 分析工具指南：10 个工具的用法和示例 |
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | 项目状态报告：架构、模块、测试覆盖 |
+| [普通用户使用指南.md](普通用户使用指南.md) | 普通用户视角的快速上手 |
 
 ## 项目介绍
 

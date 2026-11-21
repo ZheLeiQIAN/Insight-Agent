@@ -1,341 +1,353 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Insight Agent - AI 数据分析</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body class="gradient-bg min-h-screen text-gray-800" x-data="app()" x-init="init()">
-    <!-- 顶部导航 -->
-    <nav class="topbar sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="brand-mark">
-                    <span class="text-white font-bold text-lg">I</span>
-                </div>
-                <div>
-                    <h1 class="font-bold text-white">Insight Agent</h1>
-                    <p class="text-xs text-slate-400">AI 数据分析工作台</p>
-                </div>
-            </div>
-            <div class="nav-tabs">
-                <button @click="currentView='home'" :class="currentView==='home' ? 'active' : ''">首页</button>
-                <button @click="currentView='crawl'" :class="currentView==='crawl' ? 'active' : ''">数据采集</button>
-                <button @click="currentView='analysis'" :class="currentView==='analysis' ? 'active' : ''">分析报告</button>
-                <button @click="currentView='chat'" :class="currentView==='chat' ? 'active' : ''">AI 对话</button>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1B2A4E" />
+    <title>Insight Agent · 网络数据洞察工作台</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <!-- ============ 统一导航栏 ============ -->
+    <header class="topbar" id="topbar">
+      <div class="topbar-brand">
+        <div class="vol">
+          <strong>VOL.07</strong><br>
+          EDITION 2026.06
         </div>
-    </nav>
-
-    <!-- 主内容区 -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <!-- 首页 -->
-        <div x-show="currentView==='home'" x-cloak>
-            <div class="home-hero mb-8">
-                <div>
-                    <p class="hero-kicker">本地 AI 数据分析工作台</p>
-                    <h2 class="text-4xl font-bold text-white mb-4">Insight Agent</h2>
-                    <p class="text-lg text-slate-200 max-w-2xl">上传数据或采集公开信息，系统会帮你完成清洗、分析、报告和 AI 追问。适合市场调研、品牌舆情、评论分析和课题研究。</p>
-                </div>
-                <div class="hero-actions">
-                    <button @click="currentView='crawl'" class="primary-action">开始采集数据</button>
-                    <button @click="currentView='analysis'" class="secondary-action">上传/分析文件</button>
-                </div>
-            </div>
-
-            <div x-show="systemStatus && !systemStatus.api_key_configured" class="notice-card mb-6">
-                <div class="font-semibold text-amber-900">AI 功能尚未配置</div>
-                <p class="text-sm text-amber-800 mt-1">你仍然可以先使用上传文件、基础统计、词频和部分本地分析。AI 对话、主题提取和观点挖掘需要在启动器中配置 DeepSeek API Key。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <h3>准备数据</h3>
-                    <p>选择一个平台采集，或直接上传 CSV、Excel、JSON 文件。</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <h3>选择分析</h3>
-                    <p>使用快速扫描、品牌舆情、趋势追踪等模板自动生成结果。</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <h3>查看报告</h3>
-                    <p>生成 HTML 报告后，可以继续让 AI 数据分析师追问细节。</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='crawl'">
-                    <div class="feature-icon cyan-icon">C</div>
-                    <h3 class="font-bold text-lg mb-2">数据采集</h3>
-                    <p class="text-gray-600 text-sm">8大平台爬虫，一句话启动</p>
-                </div>
-
-                <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='analysis'">
-                    <div class="feature-icon green-icon">A</div>
-                    <h3 class="font-bold text-lg mb-2">智能分析</h3>
-                    <p class="text-gray-600 text-sm">7种分析模型，并行执行</p>
-                </div>
-
-                <div class="card glass rounded-xl p-6 cursor-pointer" @click="showReport()">
-                    <div class="feature-icon violet-icon">R</div>
-                    <h3 class="font-bold text-lg mb-2">可视化报告</h3>
-                    <p class="text-gray-600 text-sm">HTML/PDF，一键导出</p>
-                </div>
-
-                <div class="card glass rounded-xl p-6 cursor-pointer" @click="currentView='chat'">
-                    <div class="feature-icon amber-icon">AI</div>
-                    <h3 class="font-bold text-lg mb-2">AI 问答</h3>
-                    <p class="text-gray-600 text-sm">持续对话，深度挖掘</p>
-                </div>
-            </div>
-
-            <!-- 最近会话 -->
-            <div class="mt-12 glass rounded-xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-lg">📋 工作区状态</h3>
-                    <button @click="refreshAll()" class="text-cyan-700 text-sm hover:underline">刷新</button>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" x-show="systemStatus">
-                    <div class="status-tile">
-                        <div class="status-value" x-text="systemStatus?.data_file_count ?? 0"></div>
-                        <div class="status-label">数据文件</div>
-                    </div>
-                    <div class="status-tile">
-                        <div class="status-value" x-text="systemStatus?.report_count ?? 0"></div>
-                        <div class="status-label">分析报告</div>
-                    </div>
-                    <div class="status-tile">
-                        <div class="status-value" x-text="systemStatus?.api_key_configured ? '已配置' : '未配置'"></div>
-                        <div class="status-label">AI Key</div>
-                    </div>
-                </div>
-                <h3 class="font-bold text-lg mb-4">最近会话</h3>
-                <div x-show="sessions.length > 0">
-                    <template x-for="s in sessions" :key="s.id">
-                        <div class="flex items-center justify-between py-3 border-b last:border-0">
-                            <div>
-                                <span class="font-medium" x-text="s.file"></span>
-                                <span class="text-sm text-gray-500 ml-2" x-text="s.message_count + '轮对话'"></span>
-                            </div>
-                            <button @click="resumeSession(s.id)" class="text-cyan-600 hover:text-cyan-700 text-sm">继续 →</button>
-                        </div>
-                    </template>
-                </div>
-                <p x-show="sessions.length === 0" class="text-gray-500 text-center py-4">暂无历史会话</p>
-            </div>
+        <nav class="topbar-tabs" id="nav-tabs">
+          <button class="tab active" data-view="overview">
+            概览 <span class="en">OVERVIEW</span>
+          </button>
+          <button class="tab" data-view="crawl">
+            数据采集 <span class="en">COLLECT</span>
+          </button>
+          <button class="tab" data-view="analysis">
+            分析报告 <span class="en">ANALYZE</span>
+          </button>
+          <button class="tab" data-view="chat">
+            AI 对话 <span class="en">ASK</span>
+          </button>
+        </nav>
+      </div>
+      <div class="topbar-meta">
+        <div class="status">
+          <span><span class="dot live" id="dot-system"></span>系统</span>
+          <span><span class="dot live" id="dot-crawl"></span>采集器</span>
+          <span><span class="dot live" id="dot-llm"></span>AI Key</span>
         </div>
+        <span id="status-time">— : — : —</span>
+        <span class="badge"><span class="dot live"></span>8 PLATFORMS</span>
+      </div>
+    </header>
 
-        <!-- 爬虫页面 -->
-        <div x-show="currentView==='crawl'" x-cloak>
-            <div class="page-head">
-                <div>
-                    <p class="section-kicker">Collect</p>
-                    <h2>数据采集</h2>
-                    <p>选择平台、填写参数，然后在后台运行采集任务。任务过程中可以随时中止。</p>
-                </div>
-            </div>
+    <!-- ============ 概览视图 ============ -->
+    <main class="bento view active" id="view-overview">
 
-            <div class="glass rounded-xl p-6 mb-6">
-                <!-- 自然语言模式 -->
-                <div class="mb-8">
-                    <h3 class="font-semibold mb-4 text-cyan-700">自然语言描述</h3>
-                    <div class="flex space-x-3">
-                        <input type="text" x-model="nlQuery" placeholder="例如：爬知乎上关于人工智能的回答，要100条" 
-                               class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
-                        <button @click="nlCrawl()" :disabled="loading" 
-                                class="app-button primary disabled:opacity-50">
-                            <span x-show="!loading">AI 解析</span>
-                            <span x-show="loading" class="thinking">处理中</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 手动选择 -->
-                    <h3 class="font-semibold mb-4 text-cyan-700">手动选择平台</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <template x-for="c in crawlers" :key="c.key">
-                        <div @click="selectCrawler(c)" 
-                             :class="selectedCrawler?.key === c.key ? 'ring-2 ring-cyan-500 bg-cyan-50' : 'hover:bg-gray-50'"
-                             class="platform-tile cursor-pointer transition">
-                            <div class="font-medium" x-text="c.platform"></div>
-                            <div class="text-sm text-gray-500 mt-1" x-text="c.name"></div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- 参数配置 -->
-                <div x-show="selectedCrawler" x-cloak class="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 class="font-medium mb-3">参数配置</h4>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-sm text-gray-600 mb-1">URL / ID</label>
-                            <input type="text" x-model="crawlParams.url" class="w-full px-3 py-2 border rounded-lg" placeholder="输入URL或ID">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 mb-1">最大数量</label>
-                            <input type="number" x-model="crawlParams.max" class="w-full px-3 py-2 border rounded-lg" placeholder="100">
-                        </div>
-                        <button @click="startCrawl()" :disabled="loading" 
-                                class="app-button primary w-full disabled:opacity-50">
-                            <span x-show="!loading">开始采集</span>
-                            <span x-show="loading" class="thinking">采集中</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div x-show="crawlJob" x-cloak class="task-panel mt-6">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <div class="task-title">采集任务</div>
-                            <div class="task-meta">
-                                状态：<span x-text="crawlStatus?.status || 'started'"></span>
-                                <span x-show="crawlStatus?.rows"> · <span x-text="crawlStatus?.rows"></span> 条记录</span>
-                            </div>
-                        </div>
-                        <button x-show="['started','queued','running','cancelling'].includes(crawlStatus?.status || 'started')"
-                                @click="cancelCrawl()"
-                                class="danger-action">
-                            中止任务
-                        </button>
-                    </div>
-                    <div class="task-log" x-show="crawlLogs.length">
-                        <template x-for="(line, i) in crawlLogs.slice(-8)" :key="i">
-                            <div x-text="line"></div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 上传文件 -->
-            <div class="glass rounded-xl p-6">
-                <h3 class="font-semibold mb-4">上传数据文件</h3>
-                <div class="upload-zone">
-                    <input type="file" id="fileInput" accept=".xlsx,.csv,.json" @change="uploadFile($event)" class="hidden">
-                    <label for="fileInput" class="cursor-pointer">
-                        <p class="text-gray-600">点击或拖拽文件到这里</p>
-                        <p class="text-sm text-gray-400 mt-1">支持 .xlsx, .csv, .json</p>
-                    </label>
-                </div>
-            </div>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-main">
+          <h2>Insight Agent · <span class="zh">网络数据洞察工作台</span></h2>
+          <p class="lead">
+            一句话启动采集、清洗、分析、报告全链路。
+            <span class="hero-sub">适合市场调研、品牌舆情、评论分析和课题研究。</span>
+          </p>
         </div>
-
-        <!-- 分析页面 -->
-        <div x-show="currentView==='analysis'" x-cloak>
-            <div class="page-head">
-                <div>
-                    <p class="section-kicker">Analyze</p>
-                    <h2>分析报告</h2>
-                    <p>选择数据文件和分析模板，生成结构化洞察与可视化报告。</p>
-                </div>
-            </div>
-
-            <div class="glass rounded-xl p-6">
-                
-                <!-- 选择数据文件 -->
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-3">选择数据文件</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <template x-for="f in files" :key="f.path">
-                            <div @click="selectedFile = f" 
-                                 :class="selectedFile?.path === f.path ? 'ring-2 ring-cyan-500 bg-cyan-50' : 'hover:bg-gray-50'"
-                                 class="file-tile cursor-pointer flex items-center space-x-3">
-                                <span class="file-dot"></span>
-                                <div>
-                                    <div class="font-medium" x-text="f.name"></div>
-                                    <div class="text-sm text-gray-500" x-text="f.time"></div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- 分析模板 -->
-                <div x-show="selectedFile" x-cloak>
-                    <h3 class="font-semibold mb-3">选择分析模板</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <template x-for="t in templates" :key="t.id">
-                            <div @click="runTemplate(t)" 
-                                 class="template-tile cursor-pointer hover:bg-cyan-50 transition">
-                                <div class="font-medium" x-text="t.name"></div>
-                                <div class="text-sm text-gray-500 mt-1" x-text="t.desc"></div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- 结果显示 -->
-                <div x-show="analysisResult" x-cloak class="mt-6">
-                    <h3 class="font-semibold mb-3">分析结果</h3>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <pre class="whitespace-pre-wrap text-sm" x-text="analysisResult"></pre>
-                    </div>
-                </div>
-            </div>
+        <div class="actions">
+          <button class="btn btn-primary" data-goto="crawl">开始采集数据 →</button>
+          <button class="btn btn-ghost" data-goto="analysis">分析文件</button>
         </div>
+      </section>
 
-        <!-- AI 对话页面 -->
-        <div x-show="currentView==='chat'" x-cloak>
-            <div class="page-head">
-                <div>
-                    <p class="section-kicker">Ask</p>
-                    <h2>AI 数据分析师</h2>
-                    <p>基于已上传或已采集的数据进行追问。需要配置 DeepSeek API Key。</p>
-                </div>
-            </div>
-
-            <div class="glass rounded-xl p-6 h-[calc(100vh-260px)] flex flex-col">
-                
-                <!-- 会话列表 -->
-                <div x-show="!currentSession" class="flex-1">
-                    <div class="mb-4">
-                        <button @click="createSession()" class="app-button primary">
-                            新建会话
-                        </button>
-                    </div>
-                    <div class="space-y-2">
-                        <template x-for="s in sessions" :key="s.id">
-                            <div @click="resumeSession(s.id)" class="file-tile cursor-pointer hover:bg-gray-50">
-                                <span x-text="s.file"></span>
-                                <span class="text-sm text-gray-500 ml-2" x-text="s.message_count + '轮对话'"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- 聊天界面 -->
-                <div x-show="currentSession" x-cloak class="flex-1 flex flex-col">
-                    <div class="flex-1 overflow-y-auto mb-4 space-y-4" id="chatContainer">
-                        <template x-for="(msg, i) in chatMessages" :key="i">
-                            <div :class="msg.role === 'user' ? 'text-right' : 'text-left'">
-                                <div :class="msg.role === 'user' ? 'bg-cyan-600 text-white' : 'bg-gray-100'"
-                                     class="inline-block max-w-[80%] px-4 py-2 rounded-lg text-left" x-html="renderMarkdown(msg.content)"></div>
-                            </div>
-                        </template>
-                        <div x-show="chatLoading" class="text-left">
-                            <div class="bg-gray-100 inline-block px-4 py-2 rounded-lg thinking">AI 思考中</div>
-                        </div>
-                    </div>
-
-                    <div class="flex space-x-3">
-                        <input type="text" x-model="chatInput" @keyup.enter="sendMessage()" 
-                               placeholder="输入分析需求..." class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-cyan-500">
-                        <button @click="sendMessage()" :disabled="chatLoading" 
-                                class="app-button primary disabled:opacity-50">
-                            发送
-                        </button>
-                    </div>
-                </div>
-            </div>
+      <!-- 概览 KPI（独立卡片，4 列） -->
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">实时态势 <span class="en">SITUATIONAL KPIs</span></div>
+          <div class="meta"><span class="dot live"></span>实时 · <span id="kpi-time">— : —</span></div>
         </div>
+        <div class="kpi-strip">
+          <div class="kpi">
+            <div class="lbl">累计采集 / COLLECTED</div>
+            <div class="num"><span id="kpi-rows">142,857</span><span class="unit">条</span><span class="trend up" id="kpi-rows-trend">↑ 2,341</span></div>
+            <div class="delta">较 1h 前 <span class="bar" style="--w: 68%"></span></div>
+          </div>
+          <div class="kpi">
+            <div class="lbl">任务数 / JOBS</div>
+            <div class="num"><span id="kpi-jobs">38</span><span class="unit">个</span><span class="trend up">↑ 5</span></div>
+            <div class="delta">成功 32 · 失败 1 · 排队 5 <span class="bar" style="--w: 84%"></span></div>
+          </div>
+          <div class="kpi">
+            <div class="lbl">报告 / REPORTS</div>
+            <div class="num"><span id="kpi-reports">17</span><span class="unit">份</span></div>
+            <div class="delta">本周 +6 <span class="bar" style="--w: 60%"></span></div>
+          </div>
+          <div class="kpi">
+            <div class="lbl">AI Key / STATUS</div>
+            <div class="num"><span id="kpi-key">已配置</span></div>
+            <div class="delta">DeepSeek-V3 <span class="bar" style="--w: 100%; background: var(--green);"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 实时爬取任务流 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">实时爬取 <span class="en">LIVE CRAWL STREAM</span></div>
+          <div class="meta"><span class="dot live"></span>6 个任务运行中</div>
+        </div>
+        <div class="card-body dense">
+          <ul id="task-stream" class="task-stream">
+            <li class="task-empty">等待爬取任务接入...</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 8 大平台 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">数据源 <span class="en">DATA SOURCES · 8 PLATFORMS</span></div>
+          <div class="meta">最近 24 小时</div>
+        </div>
+        <div class="card-body dense">
+          <div id="platforms-grid" class="platforms-grid"></div>
+        </div>
+      </section>
+
+      <!-- 趋势图 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">采集趋势 <span class="en">CRAWL THROUGHPUT · 24H</span></div>
+          <div class="meta"><span id="chart-unit">条/小时</span> <span class="chart-mode-pill" id="chart-mode-toggle">📊 分渠道</span></div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="chart-throughput"></canvas></div>
+        </div>
+      </section>
+
+      <!-- 词云 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">话题词云 <span class="en">TOPIC CLOUD</span></div>
+          <div class="meta">最近 1h · 30 关键词</div>
+        </div>
+        <div class="card-body">
+          <div id="cloud" class="cloud"></div>
+        </div>
+      </section>
+
+      <!-- 最近报告 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">最近报告 <span class="en">RECENT REPORTS</span></div>
+          <div class="meta"><a href="#" data-goto="analysis" style="color:var(--accent); text-decoration:none;">查看全部 →</a></div>
+        </div>
+        <div class="card-body">
+          <ul id="report-list" class="report-list"></ul>
+        </div>
+      </section>
     </main>
 
-    <script src="/static/js/app.js"></script>
-</body>
+    <!-- ============ 数据采集视图 ============ -->
+    <main class="bento view" id="view-crawl">
+      <!-- 自然语言 -->
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">自然语言采集 <span class="en">NATURAL LANGUAGE</span></div>
+          <div class="meta">AI 解析 · 一键启动</div>
+        </div>
+        <div class="card-body">
+          <div class="nl-input">
+            <input id="nl-input" type="text" placeholder='例如："爬知乎上关于人工智能的回答，要 100 条"' />
+            <button class="btn btn-primary" id="btn-nl">AI 解析 →</button>
+          </div>
+          <div id="nl-result" style="display:none;"></div>
+        </div>
+      </section>
+
+      <!-- 平台选择 -->
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">手动选择平台 <span class="en">SELECT PLATFORM · 8 SOURCES</span></div>
+          <div class="meta">点击启动</div>
+        </div>
+        <div class="card-body">
+          <div id="crawl-platforms" class="platforms-grid"></div>
+        </div>
+      </section>
+
+      <!-- 参数配置 + 当前任务 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">参数配置 <span class="en">PARAMETERS</span></div>
+          <div class="meta" id="param-target">未选择</div>
+        </div>
+        <div class="card-body">
+          <div class="config-list">
+            <div class="config-item">
+              <span class="lab">URL / 关键词</span>
+              <input type="text" id="cfg-url" placeholder="输入 URL 或关键词" style="grid-column: 2 / -1; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); font-family: var(--mono); font-size: 11px;" />
+            </div>
+            <div class="config-item">
+              <span class="lab">最大数量</span>
+              <input type="number" id="cfg-max" value="100" min="1" max="10000" style="padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r); font-family: var(--mono); font-size: 11px;" />
+              <button class="btn btn-primary" id="btn-start-crawl">启动</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 实时任务 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="title">任务进度 <span class="en">JOB PROGRESS</span></div>
+          <div class="meta"><span class="dot live"></span>实时</div>
+        </div>
+        <div class="card-body dense">
+          <ul id="crawl-tasks" class="task-stream">
+            <li class="task-empty">暂无任务</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 数据集 -->
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">数据集 <span class="en">DATASETS · OUTPUT/DATA</span></div>
+          <div class="meta">点击选择以分析</div>
+        </div>
+        <div class="card-body">
+          <div id="file-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ 分析报告视图 ============ -->
+    <main class="bento view" id="view-analysis">
+      <section class="card">
+        <div class="card-head">
+          <div class="title">选择数据文件 <span class="en">SELECT DATA</span></div>
+          <div class="meta" id="selected-file-meta">未选择</div>
+        </div>
+        <div class="card-body">
+          <div id="analysis-files" style="display: flex; flex-direction: column; gap: 6px; max-height: 480px; overflow-y: auto;"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="title">分析模板 <span class="en">ANALYSIS TEMPLATES</span></div>
+          <div class="meta">点击运行</div>
+        </div>
+        <div class="card-body">
+          <div class="tpl-grid">
+            <div class="tpl-tile" data-tpl="quick">
+              <div class="h"><div class="ic">Q</div><div class="n">快速扫描</div></div>
+              <div class="d">5 分钟了解数据全貌，输出字段、缺失、统计、词频</div>
+              <div class="tags"><span class="tag">5分钟</span><span class="tag green">入门</span></div>
+            </div>
+            <div class="tpl-tile" data-tpl="brand">
+              <div class="h"><div class="ic">B</div><div class="n">品牌舆情</div></div>
+              <div class="d">情感分析、热点话题、关键意见领袖识别</div>
+              <div class="tags"><span class="tag">情感</span><span class="tag blue">KOL</span></div>
+            </div>
+            <div class="tpl-tile" data-tpl="trend">
+              <div class="h"><div class="ic">T</div><div class="n">趋势追踪</div></div>
+              <div class="d">时间序列分析，话题热度演化、生命周期识别</div>
+              <div class="tags"><span class="tag purple">时序</span><span class="tag">演化</span></div>
+            </div>
+            <div class="tpl-tile" data-tpl="competitive">
+              <div class="h"><div class="ic">C</div><div class="n">竞品对比</div></div>
+              <div class="d">多产品/品牌横评，差异化洞察</div>
+              <div class="tags"><span class="tag">横评</span><span class="tag amber">深度</span></div>
+            </div>
+            <div class="tpl-tile" data-tpl="topic">
+              <div class="h"><div class="ic">L</div><div class="n">主题挖掘</div></div>
+              <div class="d">LDA 主题聚类，自动发现隐藏话题</div>
+              <div class="tags"><span class="tag purple">LDA</span><span class="tag">挖掘</span></div>
+            </div>
+            <div class="tpl-tile" data-tpl="review">
+              <div class="h"><div class="ic">R</div><div class="n">评论洞察</div></div>
+              <div class="d">优缺点聚类、用户痛点与亮点</div>
+              <div class="tags"><span class="tag">痛点</span><span class="tag green">亮点</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">分析结果 <span class="en">RESULT</span></div>
+          <div class="meta">选中文件 + 模板后运行</div>
+        </div>
+        <div class="card-body">
+          <div id="analysis-result" style="font-family: var(--serif); font-size: 13px; line-height: 1.7; color: var(--ink); min-height: 220px;">
+            <p style="color: var(--ink-faint); font-style: italic;">选择数据文件 + 分析模板 → 立即生成洞察。</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ AI 对话视图 ============ -->
+    <main class="bento view" id="view-chat">
+      <section class="card col-2">
+        <div class="card-head">
+          <div class="title">AI 数据分析师 <span class="en">AI ANALYST · DEEPSEEK-V3</span></div>
+          <div class="meta"><span class="dot live"></span>已连接</div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="chat-shell" style="border:none; border-radius: 0;">
+            <aside class="chat-sidebar">
+              <div class="chat-sidebar-head">
+                <div class="t">会话列表</div>
+                <button class="btn btn-primary" id="btn-new-chat" style="padding: 4px 10px; font-size: 11px;">＋ 新建</button>
+              </div>
+              <div class="chat-sidebar-body" id="chat-sessions"></div>
+            </aside>
+            <section class="chat-main">
+              <header class="chat-header">
+                <button class="back" id="btn-back-chat">←</button>
+                <div class="ti" id="chat-title">— 选择会话 —</div>
+                <div class="meta" id="chat-meta">0 条消息</div>
+              </header>
+              <div class="chat-messages" id="chat-messages">
+                <div style="color: var(--ink-faint); font-style: italic; font-family: var(--serif); text-align: center; padding: 32px 0;">
+                  从左侧选择会话，或点击右上角"新建"
+                </div>
+              </div>
+              <div class="chat-suggest" id="chat-suggest"></div>
+              <div class="chat-input-wrap">
+                <textarea id="chat-input" class="chat-input" rows="1"
+                          placeholder="输入分析需求... (Enter 发送，Shift+Enter 换行)"></textarea>
+                <div class="chat-input-bar">
+                  <span class="hint" id="chat-hint">0 字</span>
+                  <button class="chat-send-btn" id="btn-chat-send">发送 ➤</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ 页脚 ============ -->
+    <footer class="colophon">
+      <div class="l">
+        <span>© 2026 · NANKAI UNIV. · INSIGHT AGENT LAB</span>
+      </div>
+      <div class="c">— 看见每一个数据集的洞察 —</div>
+      <div class="r">
+        <a href="#" data-launch="city-heatmap" id="lnk-city">城市热区</a>
+        <span>·</span>
+        <a href="#" data-launch="physical" id="lnk-physical">物理世界</a>
+        <span>·</span>
+        <a href="/api/healthz" target="_blank">API 状态</a>
+      </div>
+    </footer>
+
+    <script type="module" src="/static/js/app.js"></script>
+    <script type="module" src="/static/js/drawer.js"></script>
+
+    <!-- 详情抽屉（V0.9 钻取） -->
+    <div id="drawer-root" aria-hidden="true"></div>
+  </body>
 </html>

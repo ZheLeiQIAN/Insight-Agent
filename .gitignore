@@ -22,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 .env
@@ -34,7 +35,7 @@ ENV/
 *~
 
 # Output (all data and reports)
-output/
+output/*
 !output/.gitkeep
 
 # Data
@@ -52,8 +53,7 @@ logs/
 *.cache
 .pytest_cache/
 
-# Pytest
-.pytest_cache/
+# Coverage
 .coverage
 htmlcov/
 coverage.xml
@@ -77,5 +77,14 @@ Thumbs.db
 .env.local
 .env.production
 
-# Browser profiles (login sessions)
+# Browser profiles and crawler output (login sessions / raw captures)
+*_browser_profile/
+browser_profile/
 browser_profile_*/
+**/xhs_output/
+crawlers/*/output/
+
+# Front-end dependencies and model weights
+node_modules/
+*.weights
+*.tflite

@@ -43,6 +43,9 @@ REQUIRED_IMPORTS = {
     "snownlp": "snownlp",
     "prompt_toolkit": "prompt_toolkit",
     "openpyxl": "openpyxl",
+    # === 物理世界分析子系统 (V0.1) ===
+    "flask_socketio": "flask-socketio",
+    "flask_cors": "flask-cors",
 }
 
 STATE = {
@@ -171,6 +174,10 @@ def start_worker(api_key: str, use_api: bool) -> None:
             )
             APP_PROCESS = subprocess.Popen([sys.executable, "-c", code], cwd=str(ROOT))
             time.sleep(1.2)
+        # 等 /api/healthz 返回 200 再开浏览器，避免用户在 9527 还没起时就进 404
+        from cli._helpers import wait_for_health
+        if not wait_for_health(APP_URL, timeout=15):
+            log(f"⚠️ 工作台在 15 秒内未响应 {APP_URL}，请检查 Python 报错")
         webbrowser.open(APP_URL)
         with STATE_LOCK:
             STATE["app_started"] = True

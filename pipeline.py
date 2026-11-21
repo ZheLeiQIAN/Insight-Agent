@@ -243,11 +243,12 @@ class Pipeline:
         from report.generator import generate_report
 
         crawler_info = {"platform": "流水线", "name": self.data_file.name if self.data_file else "unknown"}
-        self.report_path = generate_report(
+        self.report = generate_report(
             crawler_info, self._analysis_results,
             self.data_file, self.data_file.parent if self.data_file else Path("."),
         )
-        step.result = str(self.report_path)
+        self.report_path = self.report['html']
+        return self.report_path
 
     def _run_export_pdf(self, step: PipelineStep):
         """导出 PDF"""

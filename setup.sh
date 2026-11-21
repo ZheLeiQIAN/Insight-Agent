@@ -49,7 +49,7 @@ LAUNCHEREOF
     cat > "$WEB_LAUNCHER" << WEBEOF
 #!/bin/bash
 cd "$PROJECT_DIR" || exit 1
-exec python3 tools/webui_manager.py
+exec python3 webui/webui_manager.py
 WEBEOF
     chmod +x "$WEB_LAUNCHER"
 

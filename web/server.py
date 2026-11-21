@@ -21,15 +21,91 @@ if not logging.getLogger().handlers:
 logger = logging.getLogger(__name__)
 
 from flask import Flask, render_template, request, jsonify
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__,
             template_folder=str(Path(__file__).parent / 'templates'),
             static_folder=str(Path(__file__).parent / 'static'))
 
+# 上传文件大小上限（50MB），超过会返回 413 JSON 而不是裸 HTML
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
 _sessions = {}
 _crawl_jobs = {}
 _upload_folder = PROJECT_ROOT / 'output' / 'data'
 _upload_folder.mkdir(parents=True, exist_ok=True)
+
+# 内存字典上限 —— 防止长时间运行导致内存泄漏
+_MAX_CRAWL_JOBS = 50
+_MAX_SESSIONS = 20
+_SESSION_TTL_HOURS = 24
+
+
+def _evict_finished_crawl_jobs():
+    """采集任务跑完超过 1 小时就清掉，控制 _crawl_jobs 体积。"""
+    cutoff = datetime.now().timestamp() - 3600
+    stale = [jid for jid, j in _crawl_jobs.items()
+             if j.get('status') in ('done', 'failed', 'cancelled')
+             and j.get('finished_at')
+             and datetime.fromisoformat(j['finished_at']).timestamp() < cutoff]
+    for jid in stale:
+        _crawl_jobs.pop(jid, None)
+
+    if len(_crawl_jobs) > _MAX_CRAWL_JOBS:
+        # 按 finished_at 升序淘汰最早的
+        sorted_ids = sorted(_crawl_jobs, key=lambda k: _crawl_jobs[k].get('finished_at') or '')
+        for jid in sorted_ids[: len(_crawl_jobs) - _MAX_CRAWL_JOBS]:
+            _crawl_jobs.pop(jid, None)
+
+
+def _evict_stale_sessions():
+    """空闲超过 _SESSION_TTL_HOURS 的会话清掉。"""
+    cutoff = datetime.now().timestamp() - _SESSION_TTL_HOURS * 3600
+    stale = [sid for sid, s in _sessions.items()
+             if hasattr(s, 'created_at') and s.created_at
+             and datetime.fromisoformat(s.created_at).timestamp() < cutoff]
+    for sid in stale:
+        _sessions.pop(sid, None)
+
+    if len(_sessions) > _MAX_SESSIONS:
+        sorted_ids = sorted(_sessions, key=lambda k: _sessions[k].created_at if hasattr(_sessions[k], 'created_at') and _sessions[k].created_at else '')
+        for sid in sorted_ids[: len(_sessions) - _MAX_SESSIONS]:
+            _sessions.pop(sid, None)
+
+
+@app.after_request
+def _add_cors_headers(resp):
+    """本地工具，加 CORS 头方便调试；不限制来源，仅用于 127.0.0.1 上的工作台。"""
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    return resp
+
+
+@app.errorhandler(413)
+def _too_large(_e):
+    return jsonify({'error': f'文件超过 {app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)} MB，请压缩或拆分后再上传'}), 413
+
+
+@app.errorhandler(Exception)
+def _all_exceptions(e):
+    """把任何未捕获异常转成 JSON，避免浏览器看到 HTML 错误页时 fetch 走 catch。"""
+    logger.exception('Unhandled Flask error: %s', e)
+    if isinstance(e, HTTPException):
+        return jsonify({'error': e.description}), e.code
+    return jsonify({'error': f'服务器内部错误: {e.__class__.__name__}: {e}'}), 500
+
+
+@app.route('/api/healthz')
+def healthz():
+    """零依赖的健康检查端点，供前端 ping 用。"""
+    return jsonify({'status': 'ok', 'time': datetime.now().isoformat()})
+
+
+@app.route('/', methods=['OPTIONS'])
+@app.route('/<path:_any>', methods=['OPTIONS'])
+def _preflight(_any=None):
+    return ('', 204)
 
 
 def _is_valid_api_key(value: str) -> bool:
@@ -90,6 +166,7 @@ def start_crawl():
         return jsonify({'error': f'未知爬虫: {key}'}), 400
 
     job_id = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + uuid.uuid4().hex[:6]
+    _evict_finished_crawl_jobs()
     _crawl_jobs[job_id] = {
         'id': job_id,
         'crawler': key,
@@ -264,7 +341,14 @@ def nl_crawl():
         logger.warning(f"自然语言采集 AI 解析失败: {e}")
         return jsonify({'error': f'AI 解析失败，请检查 API Key 或先使用手动选择平台。详情: {e}'}), 400
     raw_resp = r.choices[0].message.content.strip().split('```')[0].strip()
-    parsed = json.loads(raw_resp)
+    # 兼容模型偶尔返回 ```json ... ``` 包裹
+    if raw_resp.startswith('json'):
+        raw_resp = raw_resp[4:].strip()
+    try:
+        parsed = json.loads(raw_resp)
+    except json.JSONDecodeError as e:
+        logger.warning(f"自然语言采集 AI 返回非 JSON: {raw_resp[:200]!r} → {e}")
+        return jsonify({'error': f'AI 返回内容不是合法 JSON，请重试或改用手动选择平台。原始片段: {raw_resp[:120]}'}), 400
 
     platform = parsed.get('platform_key')
     if not platform or platform not in CRAWLER_SCRIPTS:
@@ -274,6 +358,7 @@ def nl_crawl():
     reason = parsed.get('reason', '')
 
     job_id = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + uuid.uuid4().hex[:6]
+    _evict_finished_crawl_jobs()
     _crawl_jobs[job_id] = {
         'id': job_id,
         'crawler': platform,
@@ -345,9 +430,9 @@ def run_template():
                 continue
 
     crawler_info = {'platform': '模板分析', 'name': fp.name}
-    report_path = generate_report(crawler_info, results, fp, fp.parent)
+    report = generate_report(crawler_info, results, fp, fp.parent)
 
-    return jsonify({'status': 'ok', 'report': str(report_path), 'models_ran': len(results)})
+    return jsonify({'status': 'ok', 'report': str(report['html']), 'report_md': str(report['md']), 'models_ran': len(results)})
 
 
 # ==================== 定时任务 ====================
@@ -422,6 +507,7 @@ def create_session():
     from analysis.quantitative import auto_detect_fields
 
     sid = datetime.now().strftime('%Y%m%d%H%M%S')
+    _evict_stale_sessions()
     session = AnalystSession(raw, fp)
     session.created_at = datetime.now().isoformat()
     session.data_file = fp
@@ -460,13 +546,21 @@ def chat():
 def upload_file():
     f = request.files.get('file')
     if not f:
-        return jsonify({'error': '没有文件'}), 400
-    ext = Path(f.filename).suffix.lower()
+        return jsonify({'error': '没有文件，请重新选择后再上传'}), 400
+    raw_name = f.filename or ''
+    ext = Path(raw_name).suffix.lower()
     if ext not in ('.xlsx', '.csv', '.json'):
-        return jsonify({'error': f'不支持: {ext}'}), 400
-    dest = _upload_folder / f.filename
-    f.save(str(dest))
-    return jsonify({'path': str(dest), 'name': f.filename, 'size': dest.stat().st_size})
+        return jsonify({'error': f'不支持的文件类型: {ext or "(无后缀)"}，仅支持 .xlsx / .csv / .json'}), 400
+    safe_name = Path(raw_name).name
+    if not safe_name or safe_name.startswith('.'):
+        return jsonify({'error': '文件名不合法'}), 400
+    try:
+        dest = _upload_folder / safe_name
+        f.save(str(dest))
+        return jsonify({'path': str(dest), 'name': safe_name, 'size': dest.stat().st_size})
+    except Exception as e:
+        logger.exception('upload failed: %s', e)
+        return jsonify({'error': f'保存失败: {e}'}), 500
 
 
 @app.route('/api/files', methods=['GET'])
@@ -592,6 +686,79 @@ def clean_data():
 
     result = do_clean(raw)
     return jsonify(result['stats'])
+
+
+# 子服务进程管理
+_sub_processes = {}  # key: service_name, value: subprocess.Popen
+
+
+@app.route('/api/start-physical', methods=['POST'])
+def start_physical():
+    """启动物理世界子服务（后端 9529 + 前端 9528）"""
+    already = _sub_processes.get('physical')
+    if already and already.get('backend') and already['backend'].poll() is None:
+        return jsonify({"ok": True, "message": "物理世界已在运行", "url": "http://127.0.0.1:9528"})
+
+    procs = {}
+    try:
+        # 1) 启动后端
+        be = subprocess.Popen(
+            [sys.executable, str(PROJECT_ROOT / 'web' / 'physical_backend' / 'app.py')],
+            cwd=str(PROJECT_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        procs['backend'] = be
+
+        # 2) 启动前端 Vite dev
+        fe = subprocess.Popen(
+            ['npx', 'vite', '--host', '127.0.0.1', '--port', '9528', '--strictPort'],
+            cwd=str(PROJECT_ROOT / 'web' / 'physical_world'),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        procs['frontend'] = fe
+
+        _sub_processes['physical'] = procs
+        return jsonify({"ok": True, "message": "物理世界启动中", "url": "http://127.0.0.1:9528"})
+    except Exception as e:
+        # 清理
+        for p in procs.values():
+            p.terminate()
+        return jsonify({"ok": False, "message": str(e)}), 500
+
+
+@app.route('/api/start-city-heatmap', methods=['POST'])
+def start_city_heatmap():
+    """启动城市热区子服务（后端 9531 + 前端 9530）"""
+    already = _sub_processes.get('city_heatmap')
+    if already and already.get('backend') and already['backend'].poll() is None:
+        return jsonify({"ok": True, "message": "城市热区已在运行", "url": "http://127.0.0.1:9530"})
+
+    procs = {}
+    try:
+        be = subprocess.Popen(
+            [sys.executable, str(PROJECT_ROOT / 'web' / 'city_heatmap_backend' / 'app.py')],
+            cwd=str(PROJECT_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        procs['backend'] = be
+
+        fe = subprocess.Popen(
+            ['npx', 'vite', '--host', '127.0.0.1', '--port', '9530', '--strictPort'],
+            cwd=str(PROJECT_ROOT / 'web' / 'city_heatmap'),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        procs['frontend'] = fe
+
+        _sub_processes['city_heatmap'] = procs
+        return jsonify({"ok": True, "message": "城市热区启动中", "url": "http://127.0.0.1:9530"})
+    except Exception as e:
+        for p in procs.values():
+            p.terminate()
+        return jsonify({"ok": False, "message": str(e)}), 500
 
 
 @app.route('/api/session/status', methods=['GET'])

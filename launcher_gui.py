@@ -271,6 +271,9 @@ class LauncherApp:
         )
         self.server_proc = subprocess.Popen([sys.executable, "-c", code], cwd=str(ROOT))
         time.sleep(1.2)
+        from cli._helpers import wait_for_health
+        if not wait_for_health(URL, timeout=15):
+            self.log(f"⚠️ 工作台在 15 秒内未响应 {URL}，请查看 Python 报错")
         webbrowser.open(URL)
         self.set_status("工作台已启动")
         self.log(f"工作台已打开：{URL}")

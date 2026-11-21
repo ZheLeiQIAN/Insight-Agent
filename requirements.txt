@@ -40,3 +40,12 @@ flask>=3.0.0
 
 # === 性能监控（可选）===
 psutil>=5.9.0
+
+# === 物理世界分析子系统（V0.1 阶段 A 骨架） ===
+flask-socketio>=5.3.0
+flask-cors>=4.0.0
+# 阶段 C 接入: opencv-python, paddlepaddle, paddledet
+# opencv-python>=4.8.0
+# paddlepaddle>=2.5.0
+# paddledet @ git+https://github.com/PaddlePaddle/PaddleDetection.git@release/2.9
+

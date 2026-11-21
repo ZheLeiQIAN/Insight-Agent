@@ -7,13 +7,13 @@
 #### 方式一：独立管理器（推荐）
 ```bash
 # 交互模式
-python tools/webui_manager.py
+python webui/webui_manager.py
 
 # 命令行模式
-python tools/webui_manager.py start    # 启动服务器
-python tools/webui_manager.py stop     # 停止服务器
-python tools/webui_manager.py status   # 查看状态
-python tools/webui_manager.py open     # 在浏览器打开
+python webui/webui_manager.py start    # 启动服务器
+python webui/webui_manager.py stop     # 停止服务器
+python webui/webui_manager.py status   # 查看状态
+python webui/webui_manager.py open     # 在浏览器打开
 ```
 
 #### 方式二：主程序启动
@@ -66,22 +66,22 @@ python web/server.py
 ### 后台运行模式
 ```bash
 # 启动后台服务器
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 终端可继续使用
 # 做其他操作...
 
 # 查看服务器状态
-python tools/webui_manager.py status
+python webui/webui_manager.py status
 
 # 停止服务器
-python tools/webui_manager.py stop
+python webui/webui_manager.py stop
 ```
 
 ### 多终端协作
 ```bash
 # 终端 1：启动 Web UI
-python tools/webui_manager.py start
+python webui/webui_manager.py start
 
 # 终端 2：运行 CLI
 python main.py
@@ -92,7 +92,7 @@ python main.py
 ### 自定义端口
 ```bash
 # 修改 web/server.py 中的端口
-python tools/webui_manager.py start --port 8080
+python webui/webui_manager.py start --port 8080
 ```
 
 ---
@@ -113,14 +113,14 @@ lsof -i :9527
 kill -9 <PID>
 
 # 或使用其他端口
-python tools/webui_manager.py start --port 8080
+python webui/webui_manager.py start --port 8080
 ```
 
 ### 问题 2：浏览器未自动打开
 **解决方案**：
 ```bash
 # 手动打开浏览器
-python tools/webui_manager.py open
+python webui/webui_manager.py open
 
 # 或直接访问 http://localhost:9527
 ```
@@ -129,14 +129,14 @@ python tools/webui_manager.py open
 **解决方案**：
 ```bash
 # 检查服务器状态
-python tools/webui_manager.py status
+python webui/webui_manager.py status
 
 # 查看日志
 tail -f output/app.log
 
 # 重启服务器
-python tools/webui_manager.py stop
-python tools/webui_manager.py start
+python webui/webui_manager.py stop
+python webui/webui_manager.py start
 ```
 
 ---

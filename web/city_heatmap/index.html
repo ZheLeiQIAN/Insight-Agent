@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insight Agent — 城市热区图 · 火锅餐饮人群洞察</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- 高德地图 JS API v2.0 -->
+  <script src="https://webapi.amap.com/maps?v=2.0&key=b72e14e1e8b6279ed4212d660f3ca5da&plugin=AMap.HeatMap,AMap.Scale,AMap.ToolBar,AMap.MapType"></script>
+</head>
+<body>
+  <!-- ===================== 统一导航栏 ===================== -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-brand">
+      <div class="vol">
+        <strong>VOL.09</strong><br>
+        EDITION 2026.06
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <div class="status">
+        <span><span class="dot live" id="sysDot"></span>系统</span>
+        <span><span class="dot live" id="mapDot"></span>地图</span>
+        <span><span class="dot live" id="engineDot"></span>分析引擎</span>
+      </div>
+      <span class="loc" id="cityLabel">📍 天津</span>
+      <button id="btnNightMode" class="btn-icon" title="切换夜间模式">🌙</button>
+      <span class="badge"><span class="dot live"></span>CITY HEATMAP</span>
+    </div>
+  </header>
+
+  <!-- ===================== Hero 品牌区 ===================== -->
+  <section class="hero">
+    <div class="hero-main">
+      <h2>Insight Agent · <span class="zh">城市餐饮热度图</span></h2>
+      <p class="lead">
+        火锅餐饮人群洞察 · 实时热力 · 食客流向
+        <span class="hero-sub">基于高德地图 + DeepSeek-V4 的城市级餐饮客流分析系统。</span>
+      </p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btnHeroHeat">🔥 热力图</button>
+      <button class="btn btn-ghost" id="btnHeroFlow">🌊 食客流向</button>
+    </div>
+  </section>
+
+  <!-- ===================== 主体 ===================== -->
+  <div class="bento">
+    <!-- 左上：地图区域（跨行，占位大） -->
+    <section class="card" id="mapArea" style="grid-row: span 2;">
+      <div id="amapContainer"></div>
+      <div class="map-overlay-corner">
+        <span>FPS: <span id="fpsCounter">--</span></span>
+        <span id="timestamp">--</span>
+      </div>
+      <div class="map-controls">
+        <button id="btnZoomIn" title="放大">+</button>
+        <button id="btnZoomOut" title="缩小">−</button>
+        <button id="btnResetView" title="重置视角">⟳</button>
+        <button id="btnToggleHeat" class="active" title="热力图">🔥</button>
+        <button id="btnToggleFlow" class="active" title="食客流向">🌊</button>
+        <select id="selCity">
+          <option value="tianjin">天津</option>
+          <option value="beijing">北京</option>
+          <option value="shanghai">上海</option>
+          <option value="shenzhen">深圳</option>
+          <option value="guangzhou">广州</option>
+          <option value="chengdu">成都</option>
+          <option value="hangzhou">杭州</option>
+        </select>
+      </div>
+      <div class="map-legend">
+        <div class="legend-title">餐饮热度</div>
+        <div class="legend-gradient"></div>
+        <div class="legend-labels"><span>低</span><span>中</span><span>高</span></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--ink-mute);">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4F7942;margin-right:3px;"></span>居住区
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1B4A6B;margin-left:8px;margin-right:3px;"></span>办公区
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8B1A1A;margin-left:8px;margin-right:3px;"></span>大学城
+        </div>
+      </div>
+    </section>
+
+    <!-- 右上：KPI + 事件流合并卡片 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="title">核心指标</span>
+        <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-faint);">实时</span>
+      </div>
+      <div class="kpi-bar" style="padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="kpi-card">
+          <div class="kpi-label">实时餐饮客流</div>
+          <div class="kpi-value" id="kpiDiners">--</div>
+          <div class="kpi-unit">人</div>
+          <div class="kpi-trend up" id="kpiTrendDiners">↑ 8%</div>
+          <canvas class="kpi-mini-chart" id="dinersBars"></canvas>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">热门菜系</div>
+          <div class="kpi-value" id="kpiCuisine" style="font-size:22px;font-family:var(--serif);">--</div>
+          <div class="kpi-unit">占比最高</div>
+          <div class="kpi-trend neutral">实时</div>
+          <div class="kpi-extra">
+            <div class="cuisine-bars" id="cuisineBars"></div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">餐饮热区</div>
+          <div class="kpi-value" id="kpiHotspots">--</div>
+          <div class="kpi-unit">个</div>
+          <div class="kpi-trend up" id="kpiTrendHotspots">↑ 2</div>
+          <div class="hs-type-bar" id="hsTypeBar" aria-label="4 商圈类型分布"></div>
+          <div class="hs-type-legend" id="hsTypeLegend"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">客流增长率</div>
+          <div class="kpi-value" id="kpiGrowth">--</div>
+          <div class="kpi-unit">vs 昨日</div>
+          <div class="kpi-trend up">实时</div>
+          <canvas id="growthSparkline"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右中：事件流 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="title">城市餐饮事件流</span>
+        <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-faint);" id="eventCountLabel">今日 0 件</span>
+      </div>
+      <div class="card-body">
+        <div class="event-list" id="eventList"></div>
+      </div>
+    </section>
+
+    <!-- 左下：热区 TOP 榜（放到 bento 第三行）-->
+    <section class="card" style="grid-row: 3;">
+      <div class="card-head">
+        <span class="title">热门区域 TOP 5</span>
+      </div>
+      <div class="card-body">
+        <div class="hotspot-list" id="hotspotList"></div>
+      </div>
+    </section>
+
+    <!-- 右下：Agent 控制台（放到 bento 第三行）-->
+    <section class="card" style="grid-row: 3; min-height: 380px;">
+      <div class="console-tabs">
+        <button class="console-tab active" data-tab="advice">智能体建议</button>
+        <button class="console-tab" data-tab="flow">流向矩阵</button>
+        <button class="console-tab" data-tab="report">阶段报告</button>
+      </div>
+      <div class="console-panel" id="panelAdvice">
+        <div class="advice-list" id="adviceList"></div>
+      </div>
+      <div class="console-panel hidden" id="panelFlow">
+        <div class="flow-matrix" id="flowMatrix"></div>
+      </div>
+      <div class="console-panel hidden" id="panelReport">
+        <div class="report-content" id="reportContent">
+          <p class="placeholder">点击「生成报告」获取当前火锅餐饮客流分析</p>
+        </div>
+        <button class="btn-report" id="btnGenerateReport">生成阶段报告</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== 智能体对话控制台 ===================== -->
+  <div class="bento" style="padding-top:0; padding-bottom:0;">
+    <section class="card chat-standalone">
+      <div class="card-head">
+        <span class="title"><span class="chat-status-dot"></span>智能体对话控制台</span>
+        <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-faint);">Insight Agent · 餐饮运营/投资双向问答</span>
+      </div>
+      <div class="chat-context" id="chatContext"></div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="询问火锅餐饮客流分析…" />
+        <button id="btnSend">发送</button>
+        <button id="btnClearChat" class="btn-ghost" title="清空对话">🗑</button>
+      </div>
+      <div class="quick-chips" id="quickChips"></div>
+    </section>
+  </div>
+
+  <!-- ===================== 页脚（统一 colophon） ===================== -->
+  <footer class="colophon">
+    <div class="l">
+      <span>© 2026 · NANKAI UNIV. · INSIGHT AGENT LAB</span>
+    </div>
+    <div class="c">— 看见每一桌的洞察 —</div>
+    <div class="r">
+      <a href="http://127.0.0.1:9527/" target="_blank">网络空间</a>
+      <span>·</span>
+      <a href="http://127.0.0.1:9528/" target="_blank">物理世界</a>
+      <span>·</span>
+      <span style="color:var(--ink-faint);font-size:9px;">:9531 / :9530</span>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

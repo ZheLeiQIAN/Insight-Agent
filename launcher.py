@@ -37,6 +37,10 @@ REQUIRED_IMPORTS = {
     "snownlp": "snownlp",
     "prompt_toolkit": "prompt_toolkit",
     "openpyxl": "openpyxl",
+    # === 物理世界分析子系统 (V0.1) ===
+    "flask_socketio": "flask-socketio",
+    "flask_cors": "flask-cors",
+    # 阶段 C 上线后启用: opencv-python, paddlepaddle, paddledet
 }
 
 

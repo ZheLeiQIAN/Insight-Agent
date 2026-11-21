@@ -110,8 +110,10 @@ def basic_stats(data: List[Dict], file_path: Path) -> Dict[str, Any]:
     if not data:
         results["error"] = "无数据"
         return results
-
     field_types = auto_detect_fields(data)
+    # 附带原始数据，供报告生成器构建 data_meta（不显示给最终用户）
+    results["_raw_data"] = data
+    results["_data_fields"] = list(data[0].keys())
 
     for field in data[0].keys():
         values = [row.get(field) for row in data if row.get(field) not in (None, "")]

@@ -28,13 +28,15 @@ def select_mode() -> Optional[str]:
         ("5", "schedule", "定时任务",      "定时自动采集分析"),
         ("6", "web",      "Web UI",        "浏览器打开看板"),
         ("7", "login",    "登录管理",      "预登录各平台"),
+        ("8", "physical", "物理世界",      "摄像头·人流·行为"),
+        ("9", "cityheat", "城市热区图",    "地图·粒子流·行为分析"),
     ]
-    icons = ["🕷", "📂", "💬", "📋", "📅", "🌐", "🔑"]
+    icons = ["🕷", "📂", "💬", "📋", "📅", "🌐", "🔑", "👁", "🔥"]
 
-    # 三列布局: [1-3] [4-6] [7]
+    # 三列布局: [1-3] [4-6] [7-9]（3×3 网格）
     left = [(modes[i], icons[i]) for i in range(3)]
     mid = [(modes[i], icons[i]) for i in range(3, 6)]
-    right = [(modes[i], icons[i]) for i in range(6, 7)]
+    right = [(modes[i], icons[i]) for i in range(6, 9)]
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column(width=30)
@@ -88,7 +90,18 @@ def select_existing_file() -> Optional[Path]:
         console.print(f"  [dim]请先将文件放入: {DATA_DIR}[/]")
         return None
 
-    console.print(f"  [dim]找到 {len(files)} 个数据文件:[/]\n")
+    console.print(f"  [dim]找到 {len(files)} 个数据文件[/]")
+    console.print("  [dim]输入关键词过滤文件名，留空显示全部[/]")
+
+    keyword = Prompt.ask("  [bold]过滤[/]", default="").strip().lower()
+    if keyword:
+        files = [f for f in files if keyword in f.name.lower()]
+        if not files:
+            console.print(f"  [yellow]没有文件名包含「{keyword}」的文件[/]")
+            return None
+        console.print(f"  [dim]过滤后 {len(files)} 个:[/]\n")
+    else:
+        console.print()
 
     table = Table(show_header=True, header_style="bold white", border_style="dim")
     table.add_column("#", style="dim", width=4)
@@ -185,8 +198,6 @@ def get_crawler_args(crawler_info: dict) -> dict:
         url = Prompt.ask("  目标URL [dim](留空使用默认)[/]", default="")
         if url:
             args["url"] = url
-        max_items = Prompt.ask("  最大采集数量", default="100")
-        args["max"] = int(max_items)
 
     elif platform == "哔哩哔哩":
         bv = Prompt.ask("  视频BV号 [dim](多个用空格分隔)[/]", default="")
@@ -210,8 +221,6 @@ def get_crawler_args(crawler_info: dict) -> dict:
     elif platform in ["天猫", "京东"]:
         url = Prompt.ask("  商品链接或ID", default="")
         args["url"] = url
-        max_items = Prompt.ask("  最大采集评论数", default="200")
-        args["max"] = int(max_items)
 
     elif platform == "豆瓣":
         mode = Prompt.ask(

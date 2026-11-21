@@ -1,526 +1,383 @@
+<div align="center">
+
+```
+██╗███╗   ██╗███████╗██╗ ██████╗ ██╗  ██╗████████╗     █████╗  ██████╗ ███████╗███╗   ██╗████████╗
+██║████╗  ██║██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝    ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝
+██║██╔██╗ ██║███████╗██║██║  ███╗███████║   ██║       ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║
+██║██║╚██╗██║╚════██║██║██║   ██║██╔══██║   ██║       ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║
+██║██║ ╚████║███████║██║╚██████╔╝██║  ██║   ██║       ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║
+╚═╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝       ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝
+```
+
 # Insight Agent
 
-> 🤖 一句话描述需求，自动采集全网数据，AI 智能分析生成报告
->
-> Crawl · Clean · Analyze · Report · Chat — Powered by DeepSeek
+### 多源情报融合 AI 平台 · 跨域数据智能决策系统
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)]()
+> **网络空间 · 物理世界 · 城市商业** — 三空间数据融合，统一 AI 主持人驱动决策闭环。
 
-**支持平台**：知乎 · B站 · 小红书 · 抖音 · 知网 · 天猫 · 京东 · 豆瓣
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
+[![Code Lines](https://img.shields.io/badge/Code-~3.0K%20lines-orange.svg)](#)
+[![Platforms](https://img.shields.io/badge/Crawlers-8%20platforms-brightgreen.svg)](#)
+[![Cold Start](https://img.shields.io/badge/Cold%20Start-130ms-ff69b4.svg)](#)
 
----
+[文档](docs/) · [快速开始](#-快速开始) · [商业化路径](#-商业化路径) · [路线图](#-路线图)
 
-## 一、项目概述
-
-Insight Agent 是一个**完全独立可分发的 AI 数据分析智能体**，集成多平台数据采集、数据清洗、智能分析、可视化报告生成和持续对话能力。面向学术研究者、数据分析师和商业决策者，将"爬虫→清洗→分析→报告→问答"全流程闭环为一个命令行工具。
-
-**核心理念**：不是"先跑代码再问 AI"，而是 **AI 主持分析全程**——AI 直接查看数据、动态决定分析方法、写 Python 执行、呈现结论、接受追问。
+</div>
 
 ---
 
-## 二、技术架构
+## 🎯 平台定位
 
-```
-                         ┌─────────────────────────┐
-                         │     Insight CLI 入口         │
-                         └───────────┬─────────────┘
-                                     │
-              ┌──────────────────────┼──────────────────────┐
-              ▼                      ▼                      ▼
-     ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
-     │   ui/          │    │   crawlers/    │    │   analysis/    │
-     │   欢迎页+菜单   │    │   8平台爬虫    │    │   10个分析工具  │
-     └────────────────┘    └────────────────┘    └────────────────┘
-              │               │       │                   │
-              │               ▼       ▼                   ▼
-              │      ┌──────────────────────┐    ┌────────────────┐
-              │      │   common/            │    │   pipeline.py  │
-              │      │   浏览器反检测       │    │   自动化流水线  │
-              │      │   登录会话管理       │    └────────────────┘
-              │      └──────────────────────┘            │
-              │                                          ▼
-     ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
-     │   chat/        │◄───│   config.py    │───▶│   report/      │
-     │   AI分析师     │    │   状态+Key     │    │   HTML+PDF报告 │
-     └────────────────┘    └────────────────┘    └────────────────┘
-```
+> **多源情报融合 AI 平台** — 通过 8 平台爬虫（网络空间）、多模态视觉感知（物理世界）、地理空间分析（城市商业）三空间数据汇集，统一 AI 主持人驱动「**采集 → 融合 → 分析 → 决策 → 报告**」全链路。
 
-### 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 语言 | Python 3.10+ |
-| LLM | DeepSeek (OpenAI 兼容 API) |
-| CLI | Rich |
-| 爬虫 | Playwright / Selenium / requests |
-| 分析 | jieba · SnowNLP · pandas · matplotlib |
-| 报告 | Chart.js + HTML |
-| 导出 | weasyprint → PDF |
-| Web | Flask |
-
-### 项目规模
-
-| 指标 | 数值 |
-|------|------|
-| 代码行数 | ~22,000 行 |
-| 文件数量 | 108 个 |
-| 爬虫平台 | 8 个（知乎/B站/小红书/抖音/知网/天猫/京东/豆瓣） |
-| 分析工具 | 10 个（4定量 + 3定性 + 3高级） |
+传统数据栈是「**单源采集 → 单领域分析 → 单点报告**」。  
+Insight Agent 是「**多源融合 → 跨域分析 → 智能决策**」 — 数据分析师升级为「指挥官」，一句话驱动整个数据基础设施。
 
 ---
 
-## 三、功能清单
+## 🌐 核心竞争力：三空间情报融合
 
-### 3.1 数据采集
+### ① 网络空间情报 · Cyber Intelligence
+**8 平台爬虫 + 自然语言启动**
 
-- **8 大平台爬虫**：知乎回答、B站视频、小红书笔记、抖音评论、知网论文、天猫/京东商品评论、豆瓣图书/电影
-- **自然语言启动**：说"爬抖音上关于AI的视频评论"，AI 自动选平台+配参数
-- **实时进度**：采集过程实时输出采集条数，Rich 动画进度条
-- **登录会话管理**：首次手动登录 → 缓存浏览器 Profile → 后续自动无头运行
-- **反检测机制**：统一的 Playwright 反检测配置（隐藏 webdriver、伪造指纹等）
+- **统一反检测**：Playwright 全平台覆盖，浏览器指纹伪装、登录会话缓存
+- **智能字段识别**：自动检测文本/数值/日期列，零配置即导即用
+- **AI 主持分析**：动态决定方法、并行执行 7 个分析模型
+- **多形态输出**：HTML / PDF / PPT 三态报告
 
-### 3.2 数据清洗
+> 适用场景：舆情监测、竞品分析、消费者洞察、学术研究
 
-- **自动清洗流水线**：HTML 标签去除、实体解码、零宽字符清理
-- **中文数字解析**：自动识别 "1.2万" → 12000、"3.5w" → 35000、"2亿" → 200000000
-- **日期标准化**：自动转换 "3天前" → YYYY-MM-DD 等相对时间
-- **智能去重**：精确/模糊去重，保留最新数据
+📦 入口：[`main.py`](main.py) · [`crawlers/`](crawlers) · [`analysis/`](analysis) · [`web/server.py`](web/server.py)
 
-### 3.3 数据分析
+### ② 物理世界感知 · Physical World Perception
+**MediaPipe + YOLO 多模态视觉引擎**
 
-- **智能字段检测**：自动识别文本/数值/日期列，无需手动配置
-- **定量分析**：描述性统计、情感分析(SnowNLP)、词频+TF-IDF(jieba)、时间序列
-- **定性分析**：LLM 主题提取、内容分类、观点挖掘
-- **高级分析**：评论聚类(关键词Jaccard)、用户活跃度排行、互动网络分析
-- **并行执行**：6线程并发分析模型，速度提升 3-4 倍
-- **结果缓存**：MD5 缓存键 + 24小时 TTL，相同数据不重复分析
-- **AI 动态分析**：AI 主动写 Python 代码执行，不限于预置模型
+- **人体感知**：MediaPipe Pose / Hands / Face Mesh 实时识别姿态与表情
+- **物体检测**：YOLOv4-tiny 轻量模型，CPU 实时推理
+- **行为分析**：行为流水线、触发规则引擎、自动告警
+- **多场景适配**：商超客流、行为分析、产品检测、客流热力
 
-### 3.4 报告与导出
+> 适用场景：智慧零售、安防监控、人机交互、数字孪生
 
-- **HTML 可视化报告**：Chart.js 图表 + 专业排版 + 响应式设计
-- **PDF 导出**：一键生成 PDF（weasyprint → playwright → 降级方案）
-- **批量对比**：选多个数据文件，排队分析，产出对比报告
+📦 入口：[`web/physical_world/`](web/physical_world) · [`web/physical_backend/`](web/physical_backend)
 
-### 3.5 自动化流水线
+### ③ 城市商业洞察 · Urban Commercial Insight
+**高德地图 + Canvas 粒子流 + AI 智能体**
 
-- **一键 Pipeline**：采集 → 清洗 → 分析 → 报告 → PDF 全自动
-- **链式调用**：`pipe.add_crawl().add_clean().add_analyze().add_report().add_export_pdf()`
-- **Web API 驱动**：通过 `/api/dashboard/pipeline` 一键启动
+- **实时粒子流**：贝塞尔曲线 + 菜系色 + 爆点动画，呈现城市餐饮人群流向
+- **多维热区分析**：热门区域 TOP 5、菜系分布、客流增长率、实时人流
+- **AI 智能体**：城市餐饮智能体对话式问询，自动生成选址建议
+- **可交互仪表盘**：Vite + 高德 JS API v2.0，WebSocket 实时数据流
 
-### 3.6 AI 交互
+> 适用场景：商业选址、招商分析、城市运营、连锁拓店
 
-- **AI 打招呼**：数据预览后 AI 立即分析数据，列出全部分析能力+适用性矩阵
-- **流式输出**：AI 回复逐字显示，打字机效果
-- **工具可视化**：Agent 调用工具全过程实时可见
-- **多轮对话**：持续追问、切换方向、深度挖掘
+📦 入口：[`web/city_heatmap/`](web/city_heatmap) · [`web/city_heatmap_backend/`](web/city_heatmap_backend)
 
-### 3.7 Web UI 看板
-
-- **数据预览**：在线浏览上传文件的前 N 行
-- **快速统计**：一键查看字段检测、基础统计
-- **工具选择分析**：从 10 个分析工具中选择执行
-- **在线流水线**：通过 Web 界面启动完整 Pipeline
-
-### 3.8 工程特性
-
-- **配置记忆**：记住上次爬虫选择、分析偏好，下次默认
-- **会话持久化**：分析到一半退出，下次 `insight` 能恢复继续
-- **自适应布局**：终端宽度检测，卡片自动适配
-- **登录管理**：统一的 5 平台登录状态管理，24 小时自动过期
-- **日志系统**：统一日志配置，文件+控制台双输出
+### 三空间融合示意
+```
+  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+  │   网络空间    │    │   物理世界    │    │   城市商业    │
+  │  8 平台爬虫   │    │ MediaPipe+YOLO│    │  高德 + 粒子  │
+  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+         │                   │                   │
+         └───────────────────┼───────────────────┘
+                             ▼
+                  ┌──────────────────────┐
+                  │   AI 主持人决策层     │
+                  │   跨域数据融合 · 推理  │
+                  └──────────────────────┘
+```
 
 ---
 
-## 四、快速开始
+## ❗ 痛点：数据分析的 6 道坎
 
-### 普通用户：双击启动
-
-如果你不熟悉命令行，优先使用一键启动入口：
-
-- macOS：双击 `Insight Agent.app`，或备用双击 `启动 Insight Agent.command`
-- Windows：双击 `启动 Insight Agent.bat`
-
-图形化启动器会自动检查依赖、创建配置文件、让你选择是否配置 DeepSeek API Key，并打开本地 Web 工作台。
-
-更详细说明见：`普通用户使用指南.md`
-
-### 环境要求
-
-- Python 3.10+
-- macOS / Linux / Windows (WSL)
-- DeepSeek API Key（用于 AI 分析功能）
-
-### 安装步骤
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/your-username/insight-agent.git
-cd insight-agent
-
-# 2. 创建虚拟环境（推荐）
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. 安装依赖
-pip install -r requirements.txt
-
-# 4. 安装浏览器（用于爬虫）
-playwright install chromium
-
-# 5. 配置 API Key
-cp .env.example .env
-# 编辑 .env 文件，填入你的 DeepSeek API Key
-```
-
-### 配置 API Key
-
-**必需配置**（用于 AI 对话和定性分析）：
-
-1. 访问 [DeepSeek 开放平台](https://platform.deepseek.com/) 注册账号
-2. 创建 API Key
-3. 编辑 `.env` 文件：
-
-```bash
-DEEPSEEK_API_KEY=sk-your-api-key-here
-```
-
-**可选配置**（使用其他 OpenAI 兼容 API）：
-
-```bash
-DEEPSEEK_BASE_URL=https://api.deepseek.com  # 或其他兼容 API 地址
-DEEPSEEK_MODEL=deepseek-chat                 # 或其他模型名称
-```
-
-### 启动
-
-```bash
-# 方式一：全局命令（需要先运行 setup.sh）
-./setup.sh
-insight
-
-# 方式二：直接运行
-python3 main.py
-```
-
-### 典型工作流
-
-```
-1. insight 启动 → 看到欢迎页
-2. 选择模式：
-   - [1] 抓取新数据    → 手动选平台
-   - [2] 分析已有数据   → 从本地文件开始
-   - [3] 描述需求       → 自然语言启动爬虫
-3. 数据预览 → AI 打招呼并列出分析能力
-4. 持续对话：指挥 AI 做分析
-5. 可选：生成报告 / 导出 PDF
-```
-
-### 无 API Key 也能用
-
-即使没有配置 API Key，以下功能仍然可用：
-- ✅ 8 个平台的数据采集
-- ✅ 数据清洗和预处理
-- ✅ 定量分析（统计、情感、词频、时间序列）
-- ❌ 定性分析（需要 LLM）
-- ❌ AI 对话（需要 LLM）
+| 现状 | 痛点 | 我们怎么解 |
+|---|---|---|
+| 🔍 **采集** | 8 个平台，8 套登录/反爬/字段体系 | 统一 Playwright 反检测，**自然语言启动** |
+| 🧹 **清洗** | HTML 标签、零宽字符、中文数字、相对时间 | 智能流水线：**"1.2万"→12000、"3天前"→YYYY-MM-DD** |
+| 📊 **分析** | 写 Python、调库、调参、画图 | **AI 主持人**：动态决定方法、写代码、给结论 |
+| 🤖 **追问** | 老板换个角度问，又要从头跑 | **多轮对话 + 会话持久化**，断点续跑 |
+| 📄 **报告** | Word 排版、PPT 模板、PDF 导出 | **一键 HTML / PDF / PPT** 三态输出 |
+| 💸 **成本** | SaaS 月费 $50-500，数据上云 | **本地运行、MIT 开源、零云依赖** |
 
 ---
 
-## 五、商业化路径
-
-### 5.1 产品定位
-
-| 维度 | 描述 |
-|------|------|
-| 目标用户 | 高校研究者、市场分析师、新媒体运营、舆情监测团队 |
-| 核心价值 | 一句话启动数据采集+分析，降低数据分析门槛 10 倍 |
-| 竞品差异 | 非 SaaS/云端，本地运行；非单一功能，全流程闭环 |
-
-### 5.2 商业模式
-
-#### 路径 A：SaaS 云端版
+## 💡 我们的解法：AI 主持分析，而不是 AI 辅助分析
 
 ```
-┌─────────────────────────────────────────────┐
-│              Insight Agent Cloud                │
-├─────────────────────────────────────────────┤
-│  Free Tier      │  Pro ($29/月)  │  Team ($99/月) │
-│  ─────────────  │  ────────────  │  ────────────── │
-│  3次分析/月     │  无限分析      │  5人协作        │
-│  1个爬虫平台    │  8平台全开     │  API接口        │
-│  HTML报告       │  PDF/PPT导出   │  定制报告模板   │
-│                 │  批量对比      │  数据看板       │
-└─────────────────────────────────────────────┘
+传统 AI 工具   =  你跑代码 → AI 答疑
+Insight Agent  =  AI 主持人 → 动态选工具 → 写代码 → 输出结论 → 接受追问
 ```
 
-**优势**：零部署、手机可用、数据云端存储
-**挑战**：爬虫需处理反爬（需IP池+验证码服务）
-
-#### 路径 B：企业本地部署
+**对话示例**：
 
 ```
-一次性授权费：￥30,000-80,000/年
-内容：源码交付 + 定制爬虫 + 内网部署 + 培训
-目标：舆情监测公司、品牌方市场部、高校实验室
+你：「这些评论的情感倾向如何？」
+AI：直接写代码跑 SnowNLP → 输出分布图 + 正负面例句 → 追问「负面主要集中在什么问题？」
+
+你：「再对比一下天猫和京东对同一款产品的评价」
+AI：重新加载两个数据集 → 并行分析 → 输出对比结论
 ```
 
-**优势**：高客单价、客户粘性强
-**挑战**：销售周期长、需技术支持团队
+---
 
-#### 路径 C：开源 + 增值服务（推荐）
+## ✨ 核心亮点
+
+### ① 8 平台爬虫 + 自然语言启动
+| 平台 | 数据类型 |
+|---|---|
+| 知乎 / 豆瓣 | 问答、评分 |
+| B 站 | 视频弹幕 / 评论 |
+| 小红书 | 笔记 |
+| 抖音 | 短视频评论 |
+| 知网 | 学术论文 |
+| 天猫 / 京东 | 商品评论 |
+
+> 不需要手动选平台、配参数。说「爬抖音上关于 AI 的视频评论」，AI 自动选择爬虫、设置关键词、启动采集。
+
+### ② 智能字段检测，零配置
+不同平台爬下来的数据列名千奇百怪 —— `content` / `评论内容` / `text` 三种命名都有。  
+平台的 `auto_detect_fields()` 自动推断每列类型（文本 / 数值 / 日期），**对任意平台的数据「即导即用」**。
+
+### ③ 自研 Agent 内核（520 文件）
+不是调 API 的薄壳。项目内嵌完整 AIAgent 引擎：
+- **懒加载**：冷启动 **130ms**
+- **工具编排**：可视化 Agent 决策链
+- **流式输出**：逐 token 打字机效果
+- **会话持久化**：分析到一半退出，下次打开继续
+
+### ④ 双界面 + 一键分发
+- **终端版** (`insight`)：ANSI Shadow 艺术字欢迎页，六宫格菜单，Rich 动画
+- **Web 版** (`insight-web`)：Apple 白色极简设计，毛玻璃侧栏，Flask + Chart.js
+- **城市热区图 Demo** (`web/city_heatmap`)：高德地图 + Canvas 粒子流，Vite + Vue 风格 Web 仪表盘
+
+### ⑤ 端到端 Pipeline
+`采集 → 清洗 → 分析 → 报告 → PDF` 一键自动化：
+```python
+pipe.add_crawl().add_clean().add_analyze().add_report().add_export_pdf()
+```
+
+### ⑥ 极小体积，U 盘即用
+整个项目 **37MB**，MIT 开源协议，**一根 U 盘就能带走**。
+
+---
+
+## 🏗 技术架构
 
 ```
-开源版（MIT）          → GitHub 获取用户
-  ↓
-增值服务：
-  ├── 定制爬虫开发      ￥5,000-20,000/个
-  ├── 私有化部署        ￥20,000起
-  ├── 培训工作坊        ￥3,000/人·天
-  └── 年度技术支持      ￥10,000/年
+                    ┌──────────────────────┐
+                    │   insight CLI 入口       │
+                    │   "多源情报融合 · 决策"  │
+                    └──────────┬───────────┘
+          ┌────────────────────┼────────────────────┐
+          ▼                    ▼                     ▼
+   ┌──────────────┐   ┌──────────────┐    ┌──────────────┐
+   │ 8 平台爬虫    │   │ 7 分析模型   │    │ Web UI       │
+   │ Playwright   │   │ 4 定量+3 定性 │    │ Flask + Vite │
+   └──────────────┘   └──────────────┘    └──────────────┘
+          │                    │                     │
+          └────────────────────┼─────────────────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │   AIAgent 引擎        │
+                    │   520 文件 · 自研内核  │
+                    │   懒加载 · 流式 · 记忆 │
+                    └──────────────────────┘
 ```
-
-**优势**：低成本获客、快速验证市场
-**案例**：RStudio、Jupyter 均走此路径
-
-#### 路径 D：垂直行业套件
-
-| 行业 | 定制内容 | 年费 |
-|------|----------|------|
-| 🏫 高校科研版 | 论文爬虫+文献综述+引用分析 | ￥5,000 |
-| 📊 品牌监测版 | 竞品分析模板+舆情预警 | ￥8,000 |
-| 🛒 电商分析版 | 评论分析+竞品价格监控 | ￥6,000 |
-| 📰 媒体监测版 | 新闻聚合+话题追踪 | ￥10,000 |
-
-### 5.3 市场数据
 
 | 指标 | 数据 |
-|------|------|
-| 中国数据分析市场规模 | ~￥500亿 (2025) |
-| 舆情监测市场增速 | 年增 18% |
-| 高校社科研究者数量 | ~50万人 |
-| 新媒体运营从业者 | ~300万人 |
-| 目标客户获取成本 (CAC) | ￥200-500 (线上) |
-
-### 5.4 推荐路线图
-
-```
-Phase 1 (0-3月)：验证 PMF
-  ├── 开源到 GitHub，获取 100+ Star
-  ├── 录制 3 个演示视频
-  ├── 联系 10 个种子用户免费试用
-  └── 收集反馈迭代
-
-Phase 2 (3-6月)：商业化
-  ├── 上线 Pro 版（SaaS 或本地）
-  ├── 发布第一个行业套件（高校科研版）
-  ├── 建立文档站 + 社区
-  └── 目标：50 付费用户
-
-Phase 3 (6-12月)：规模化
-  ├── 全行业套件上线
-  ├── 企业版销售团队
-  ├── API 对外开放
-  └── 目标：MRR ￥10万+
-```
-
-### 5.5 竞争分析
-
-| 产品 | 定位 | Insight Agent 优势 |
-|------|------|----------------|
-| 八爪鱼/后羿 | 可视化爬虫 | AI 分析闭环，不止采集 |
-| ChatGPT Code Interpreter | AI 分析 | 本地运行+多平台爬虫 |
-| 舆情通/清博 | 商业舆情 | 开源可定制，价格优势 |
-| Python 脚本 | 手动分析 | 自然语言交互，降低门槛 |
+|---|---|
+| 自写代码 | ~3,000 行 Python |
+| Agent 内核 | 520 文件，37MB |
+| LLM | DeepSeek（可替换 OpenAI 兼容 API） |
+| 爬虫平台 | **8** 个 |
+| 分析模型 | **7** 个（4 定量 + 3 定性） |
+| Web 端示例 | 城市餐饮热区图（高德 + Canvas 粒子） |
+| 冷启动 | **~130ms** |
 
 ---
 
-## 六、项目结构
+## 🚀 快速开始
 
-```
-insight-agent/
-├── main.py                        主流程编排
-├── config.py                      配置+状态持久化
-├── pipeline.py                    采集→清洗→分析→报告 自动化流水线
-├── scheduler.py                   定时任务调度
-├── skills.py                      分析模板管理
-├── logging_config.py              日志配置
-├── requirements.txt               全量依赖
-├── setup.sh                       一键安装脚本
-├── .env.example                   环境变量模板
-│
-├── ui/                            CLI界面
-│   ├── banner.py                  欢迎页
-│   └── menu.py                    交互式菜单+配置记忆
-│
-├── cli/                           CLI 命令
-│   └── commands.py                交互式命令实现
-│
-├── crawlers/                      8平台爬虫
-│   ├── runner.py                  运行器+实时输出
-│   ├── common/                    公共模块
-│   │   ├── browser.py             反检测浏览器配置
-│   │   └── login_helper.py        统一登录会话管理
-│   ├── cnki/                      知网
-│   ├── zhihu/                     知乎
-│   ├── bilibili/                  B站
-│   ├── douyin/                    抖音
-│   ├── xiaohongshu/               小红书
-│   ├── tmall/                     天猫
-│   ├── jd/                        京东
-│   └── douban/                    豆瓣
-│
-├── analysis/                      分析引擎 (10个工具)
-│   ├── quantitative.py            智能检测+4定量模型
-│   ├── qualitative.py             3定性模型（LLM）
-│   ├── advanced.py                高级分析（聚类/用户/网络）
-│   ├── data_cleaner.py            数据清洗流水线
-│   ├── smart_analyzer.py          AI智能分析器
-│   ├── tools_registry.py          工具注册表
-│   └── cache.py                   分析结果缓存
-│
-├── chat/                          AI交互
-│   └── agent.py                   AI分析师+会话管理
-│
-├── report/                        报告
-│   └── generator.py               HTML/Chart.js+PDF导出
-│
-├── web/                           Web UI
-│   ├── server.py                  Flask 后端
-│   └── static/                    静态资源
-│
-├── tools/                         辅助工具
-│   ├── webui_manager.py           Web UI 管理器
-│   ├── cli_enhancer.py            CLI 增强器
-│   └── web.sh                     一键启动脚本
-│
-├── tests/                         测试套件
-│   ├── test_data_cleaner.py       数据清洗测试
-│   ├── test_tools_registry.py     工具注册表测试
-│   └── ...                        其他测试
-│
-├── docs/                          文档
-│   ├── CLI_GUIDE.md               CLI 使用指南
-│   ├── WEB_UI_GUIDE.md            Web UI 指南
-│   └── ANALYSIS_TOOLS_GUIDE.md    分析工具指南
-│
-├── examples/                      使用示例
-│   ├── full_workflow_demo.py      完整工作流演示
-│   └── analysis_tools_demo.py     分析工具演示
-│
-└── output/                        输出目录 (git 忽略)
-    ├── data/                      爬虫数据
-    └── reports/                   HTML报告
+### 1️⃣ 零门槛：双击启动
+- **macOS** · 双击 [`Insight Agent.app`](Insight%20Agent.app) 或 [`启动 Insight Agent.command`](启动%20Insight%20Agent.command)
+- **Windows** · 双击 [`启动 Insight Agent.bat`](启动%20Insight%20Agent.bat)
+
+图形化启动器会自动检查依赖、创建配置文件、引导配置 DeepSeek API Key、打开 Web 工作台。  
+📖 详细：[`普通用户使用指南`](docs/普通用户使用指南.md)
+
+### 2️⃣ 开发者：命令行
+```bash
+# 克隆
+git clone https://github.com/ZheLeiQIAN/Insight-Agent.git
+cd Insight-Agent
+
+# 虚拟环境
+python3 -m venv venv && source venv/bin/activate
+
+# 装依赖
+pip install -r requirements.txt
+playwright install chromium
+
+# 配置 API Key
+cp .env.example .env
+# 编辑 .env 写入 DEEPSEEK_API_KEY=sk-xxx
 ```
 
----
+### 3️⃣ 启动
+```bash
+# 全局命令
+./setup.sh && insight
 
-## 七、技术亮点
+# 或直接跑
+python3 main.py
 
-1. **智能字段检测**：自动推断文本/数值/日期列，零配置
-2. **并行分析**：ThreadPool 6线程加速 3-4 倍
-3. **流式输出**：AI 回复逐 token 显示，实时可见
-4. **会话恢复**：退出自动保存，下次 `insight` 继续
-5. **自然语言爬虫**：描述需求 → AI 选择平台+参数
-6. **统一登录管理**：5 平台共享登录框架，Profile 目录缓存，24h 自动过期
-7. **反检测浏览器**：Playwright 反指纹配置，隐藏 webdriver 特征
-8. **分析结果缓存**：MD5 缓存键，相同数据不重复分析
-9. **自动化流水线**：采集→清洗→分析→报告→PDF 一行代码搞定
-10. **工具注册表模式**：10 个分析工具统一注册、按数据特征自动推荐
-11. **数据清洗引擎**：中文数字解析、相对时间转换、HTML 清理、智能去重
+# 启动城市热区图 demo
+cd web/city_heatmap && npm run dev
+```
 
----
+### 4️⃣ 典型工作流
+```
+insight 启动 → 看到 ASCII 艺术字欢迎页
+   ↓
+选择模式：
+   [1] 抓取新数据    → 手动选平台
+   [2] 分析已有数据   → 从本地文件开始
+   [3] 描述需求       → 自然语言启动爬虫
+   ↓
+数据预览 → AI 打招呼并列出分析能力
+   ↓
+持续对话：指挥 AI 做分析
+   ↓
+可选：生成报告 / 导出 PDF
+```
 
-## 八、贡献与许可
-
-- **许可证**：MIT
-- **Python 版本**：>= 3.10
-- **创建时间**：2026年5月
-
-### 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建特性分支：`git checkout -b feature/your-feature`
-3. 提交更改：`git commit -m 'Add some feature'`
-4. 推送分支：`git push origin feature/your-feature`
-5. 提交 Pull Request
-
-### 问题反馈
-
-遇到问题？请提交 [Issue](https://github.com/your-username/insight-agent/issues)，包含：
-- 操作系统和 Python 版本
-- 完整的错误信息
-- 复现步骤
-
----
-
-## 九、常见问题
-
-### Q1: 没有 DeepSeek API Key 能用吗？
-
-**可以！** 以下功能无需 API Key：
+### 5️⃣ 无 API Key 也能用
+即使没有 DeepSeek Key，以下功能仍可用：
 - ✅ 8 个平台的数据采集
 - ✅ 数据清洗和预处理
-- ✅ 定量分析（统计、情感、词频、时间序列）
+- ✅ 定量分析（统计 / 情感 / 词频 / 时间序列）
+- ❌ 定性分析（需 LLM）
+- ❌ AI 对话（需 LLM）
 
-需要 API Key 的功能：
-- ❌ 定性分析（主题提取、内容分类、观点挖掘）
-- ❌ AI 对话分析
+---
 
-### Q2: 如何获取 DeepSeek API Key？
+## 🧩 子项目导览
 
-1. 访问 [DeepSeek 开放平台](https://platform.deepseek.com/)
-2. 注册账号并完成实名认证
-3. 创建 API Key
-4. 复制 Key 到 `.env` 文件
+| 路径 | 说明 | 栈 |
+|---|---|---|
+| [`main.py`](main.py) | CLI 主入口（ANSI Shadow 欢迎页） | Python · Rich · pyfiglet |
+| [`chat/`](chat) | AI 对话 + Agent 调度 | DeepSeek · Function Calling |
+| [`crawlers/`](crawlers) | 8 平台爬虫（统一反检测） | Playwright |
+| [`analysis/`](analysis) | 7 个分析模型 | SnowNLP · jieba · LLM |
+| [`web/`](web) | Web UI 工作台 | Flask · Vite |
+| [`web/city_heatmap/`](web/city_heatmap) | 城市餐饮热区图 Demo | AMap · Canvas 粒子流 |
+| [`agent_kernel/`](agent_kernel) | 自研 AIAgent 内核（懒加载） | Hermes-style |
+| [`docs/`](docs) | BP / 用户指南 / CLI 指南 | Markdown |
 
-### Q3: 可以用其他 LLM 吗？
+---
 
-**可以！** 任何 OpenAI 兼容的 API 都可以使用：
+## 💼 商业化路径
 
-```bash
-# 通义千问
-DEEPSEEK_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-DEEPSEEK_MODEL=qwen-turbo
+### 路径 A：SaaS 云端版
+| 套餐 | 价格 | 能力 |
+|---|---|---|
+| **Free** | ¥0 | 3 次 / 月 · 1 平台 · HTML 报告 |
+| **Pro** | ¥199 / 月 | 无限分析 · 8 平台 · PDF / PPT |
+| **Team** | ¥699 / 月 | 5 人协作 · API 接口 · 数据看板 |
 
-# 智谱 AI
-DEEPSEEK_BASE_URL=https://open.bigmodel.cn/api/paas/v4
-DEEPSEEK_MODEL=glm-4
+- ✅ 零部署、手机可用
+- ⚠️ 需 IP 池 + 验证码服务应对反爬
 
-# 本地 Ollama
-DEEPSEEK_BASE_URL=http://localhost:11434/v1
-DEEPSEEK_MODEL=llama3
+### 路径 B：企业本地部署
+> **¥30,000 - 80,000 / 年** · 源码交付 + 定制爬虫 + 内网部署 + 培训
+
+- ✅ 高客单价、客户粘性强
+- ⚠️ 销售周期长、需技术支持团队
+
+### 路径 C：开源 + 增值服务（推荐）
+```
+MIT 开源版            → GitHub 获取用户 + 社区共建
+  ├─ 定制爬虫开发       ¥5,000 - 20,000 / 个
+  ├─ 企业内训           ¥10,000 - 30,000 / 场
+  ├─ 私有化部署服务      ¥50,000 起
+  └─ 行业解决方案模板     ¥100,000+ / 行业
 ```
 
-### Q4: 爬虫需要登录吗？
+- ✅ 用户拉新成本低、品牌口碑好
+- ✅ 增值服务可标准化交付
 
-部分平台需要登录才能获取完整数据：
-- **需要登录**：知乎、小红书、抖音、天猫、京东
-- **无需登录**：B站、知网、豆瓣
+---
 
-首次使用时，系统会自动打开浏览器让你手动登录，之后会缓存登录状态（24小时有效）。
+## 🛣 路线图
 
-### Q5: 安装依赖失败怎么办？
+| 阶段 | 目标 | 状态 |
+|---|---|---|
+| **V1.0** · 已完成 | 8 平台爬虫 + 7 分析模型 + 双界面 + Agent 内核 | ✅ |
+| **V1.1** · 进行中 | 城市热区图 Demo（V4.5）· 实时粒子流 · 智能体对话 | 🚧 |
+| **V2.0** · Q4 2026 | SaaS 云端版 · 多租户 · 计费系统 | 📋 |
+| **V2.5** · Q1 2027 | 行业垂直模板（餐饮 / 电商 / 舆情） | 📋 |
+| **V3.0** · Q2 2027 | 多模态（图 / 视频 / 语音分析） | 📋 |
 
-```bash
-# 1. 升级 pip
-pip install --upgrade pip
+---
 
-# 2. 使用国内镜像
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+## 📊 关键指标
 
-# 3. 单独安装失败的包
-pip install playwright
-playwright install chromium
+| 维度 | 当前 |
+|---|---|
+| 自写代码 | **~3,000 行** Python |
+| Agent 内核 | **520 文件** · 37MB |
+| 爬虫平台 | **8** |
+| 分析模型 | **7**（4 定量 + 3 定性） |
+| 冷启动 | **130ms** |
+| 报告输出 | **HTML / PDF / PPT** 三态 |
+| 部署形态 | 终端 + Web + 单页 Demo |
+| 许可证 | **MIT** |
+
+---
+
+## 🤝 团队与贡献
+
+- **作者**：[ZheLeiQIAN](https://github.com/ZheLeiQIAN) · [qianzhelei@gmail.com](mailto:qianzhelei@gmail.com)
+- **贡献**：欢迎 PR、Issue、Feature Request
+- **社区**：GitHub Discussions · 微信群（见 [`docs/普通用户使用指南`](docs/普通用户使用指南.md)）
+
+---
+
+## 📄 许可证
+
+```
+MIT License
+
+Copyright (c) 2026 ZheLeiQIAN
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software...
 ```
 
-### Q6: 如何更新到最新版本？
+详见 [`LICENSE`](LICENSE)。
 
-```bash
-git pull origin main
-pip install -r requirements.txt --upgrade
-```
+---
+
+## 🙏 致谢
+
+- 灵感来源：[Hermes Agent](https://github.com/agent) · [LangChain](https://github.com/langchain-ai/langchain) · [Playwright](https://github.com/microsoft/playwright)
+- LLM 服务：[DeepSeek](https://platform.deepseek.com/)
+- 地图数据：[高德开放平台](https://lbs.amap.com/)
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，欢迎 Star · Fork · PR ⭐**
+
+[🐛 报告 Bug](https://github.com/ZheLeiQIAN/Insight-Agent/issues) · [✨ 提 Feature](https://github.com/ZheLeiQIAN/Insight-Agent/issues/new) · [💬 Discussions](https://github.com/ZheLeiQIAN/Insight-Agent/discussions)
+
+<sub>Built with ❤️ by ZheLeiQIAN · 2026</sub>
+
+</div>
